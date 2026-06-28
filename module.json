@@ -2,37 +2,29 @@
   "id": "crucible-tailoring",
   "title": "Crucible Tailoring",
   "description": "Player-driven Tailoring crafting workflow for the Crucible game system. Adds a Tailoring Hub, material import, craft activities (Trade Goods, Equipment, Mend, Disguise, Modification), and a GM-confirmed write pipeline.",
-  "version": "1.0.0",
-  "authors": [{ "name": "" }],
+  "authors": [{ "name": "Ebonhawk3829" }],
+  "version": "0.1.0-dev",
   "compatibility": {
-    "minimum": "14",
-    "verified": "14"
+    "minimum": 14,
+    "verified": 14
   },
   "relationships": {
-    "systems": [
-      {
-        "id": "crucible",
-        "type": "system",
-        "compatibility": { "verified": "14" }
-      }
-    ]
+    "systems": [{
+      "id": "crucible",
+      "type": "system",
+      "compatibility": { "minimum": "0.10.0" }
+    }]
   },
   "esmodules": ["scripts/main.mjs"],
   "styles": ["styles/tailoring.css"],
-  "languages": [
-    {
-      "lang": "en",
-      "name": "English",
-      "path": "lang/en.json"
-    }
-  ],
-  "flags": {
-    "crucible-tailoring": {
-      "proposal": {},
-      "compendiumKey": "",
-      "materialTag": true
-    }
-  },
-  "manifest": "",
-  "download": ""
+  "languages": [{
+    "lang": "en",
+    "name": "English",
+    "path": "lang/en.json"
+  }],
+  "url": "https://github.com/Ebonhawk3829/crucible-tailoring",
+  "manifest": "https://github.com/Ebonhawk3829/crucible-tailoring/releases/latest/download/module.json",
+  "download": "https://github.com/Ebonhawk3829/crucible-tailoring/releases/download/0.1.0-dev/module.zip",
+  "bugs": "https://github.com/Ebonhawk3829/crucible-tailoring/issues",
+  "readme": "https://github.com/Ebonhawk3829/crucible-tailoring/blob/main/README.md"
 }
