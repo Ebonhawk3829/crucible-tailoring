@@ -1,52 +1,96 @@
 # Crucible Tailoring
 
-A Foundry VTT v14 module that adds a player-driven Tailoring crafting workflow on top of the [Crucible](https://foundryvtt.com/packages/crucible) game system.
+![Foundry v14](https://img.shields.io/badge/Foundry-v14-informational)
+![Crucible](https://img.shields.io/badge/System-Crucible-orange)
+![Latest Release](https://img.shields.io/github/v/release/Ebonhawk3829/crucible-tailoring?label=Latest)
+![License](https://img.shields.io/github/license/Ebonhawk3829/crucible-tailoring)
 
-## Overview
+A player-driven Tailoring crafting module for the [Crucible](https://foundryvtt.com/packages/crucible) game system in [Foundry Virtual Tabletop](https://foundryvtt.com/).
 
-The Tailoring Hub lets players with the Tailoring tradeskill craft equipment, trade goods, disguises, and modifications from gathered materials. All world mutations go through a single GM-confirm step — nothing is created or destroyed until the GM clicks confirm.
+Adds a **Tailoring Hub** where players with the Tailoring tradeskill can craft equipment, trade goods, disguises, and modifications from gathered materials. All world mutations go through a single GM-confirm step — nothing is created or destroyed until the GM clicks confirm.
 
-### Activities
+## Features
 
-| Activity | Tier | Description |
-|---|---|---|
-| **Craft Trade Goods** | Novice | Convert materials into sellable goods |
-| **Craft Equipment** | Novice | Craft clothing, armour, and accessories |
-| **Mend Party Clothing** | Novice | Mend the party's clothing for social-skill boons until next rest |
-| **Craft Disguise** | Journeyman | Create social or environmental disguises |
-| **Apply Modification** | Journeyman | Apply physical modifications (affixes) to cloth/leather gear |
-
-### How it works
-
-1. Player opens the Tailoring Hub on their character (requires Tailoring training rank ≥ 1)
-2. Player selects an activity, chooses materials, and clicks begin
-3. The GM's client runs the skill check; the player rolls in their own dialog
-4. Player reviews the result in a convert dialog and approves
-5. A proposal chat card appears for the GM with a confirm button
-6. GM clicks confirm — the materials are consumed and the output is created
-
-## Requirements
-
-- Foundry VTT v14+
-- [Crucible](https://foundryvtt.com/packages/crucible) game system
+- **Tailoring Hub** — A player-facing ApplicationV2 window showing tailoring rank, skill bonus, tagged materials, owned tools, and available activities.
+- **Five Craft Activities** — Craft Trade Goods, Craft Equipment, Mend Party Clothing, Craft Disguise, and Apply Modification, each with its own setup dialog and output.
+- **GM-Confirmed Write Pipeline** — The player originates every decision; the GM is a delegated relay for the skill roll and the final confirm. Only the GM confirm button mutates world items.
+- **Material Import** — Drag items from the sidebar into the Hub to tag them as tailoring materials. A recipe calculator box computes materials required from an item's price.
+- **Quality-Based Outcomes** — Strong success / success / failure / strong failure bands determine whether the output is one tier higher, matches, drops a tier, or is ruined.
+- **Tool Requirements** — Novice activities require a Tailor's Toolkit; Journeyman activities require a Portable Workbench; Mend additionally requires a Repair Kit.
+- **Mend Boons** — Mend produces a consumable that applies social-skill boons (Diplomacy, Deception, Intimidation, Persuasion, Society) until the next rest.
+- **Modification via Affixes** — The Apply Modification dialog lets the player drag a real Crucible affix from the compendium onto the output side. Modifications share affix slots with enchantments.
+- **Disguises** — Craft social disguises (Deception boons) or environmental disguises (Stealth boons) for specific contexts.
+- **One Proposal Per Actor** — A player can only have one pending GM proposal at a time, preventing queue spam.
+- **Stackable-Aware Consumption** — Stackable items are decremented rather than deleted; only fully depleted stacks are removed.
+- **Configurable DCs** — All material DCs, the mend DC, and the strong-success delta are world-scoped settings adjustable from the Configure Settings menu.
 
 ## Installation
 
-Copy this folder into your Foundry VTT `Data/modules/` directory:
+### From Foundry
 
-```
-Data/modules/crucible-tailoring/
-```
+1. Open Foundry VTT and go to **Add-on Modules** → **Install Module**.
+2. Paste the following URL into the **Manifest URL** field:
+   ```
+   https://github.com/Ebonhawk3829/crucible-tailoring/releases/latest/download/module.json
+   ```
+3. Click **Install**.
+4. Enable the module in your world.
 
-Then enable the module in your world's Module Settings.
+### Manual
 
-## GM Setup
+Download `module.zip` from the [latest release](https://github.com/Ebonhawk3829/crucible-tailoring/releases/latest), extract it into your `Data/modules/` directory, and restart Foundry.
 
-1. Enable the module in your world
-2. On first load, seed items (tools, trade goods, outputs) are automatically created in the world Items directory
-3. Players import tailoring materials by dragging items from the sidebar into the Hub's import zone
-4. All DCs and thresholds are adjustable in Configure Settings → Crucible Tailoring
+## Requirements
+
+| Requirement | Version |
+|---|---|
+| Foundry VTT | v14+ |
+| Crucible | 0.10.0+ |
+
+This module **only** works with the Crucible game system. It uses Crucible's `SYSTEM.CRAFTING.TRAINING.tailoring`, `actor.getSkillCheck()`, `StandardCheck.request()`, and the built-in item quality system.
+
+## Settings
+
+All settings are world-scoped and configurable by the GM under **Settings** → **Module Settings** → **Crucible Tailoring**.
+
+| Setting | Default | Description |
+|---|---|---|
+| Shoddy Material DC | 8 | DC for working shoddy-quality materials. |
+| Standard Material DC | 12 | DC for working standard-quality materials. |
+| Fine Material DC | 16 | DC for working fine-quality materials. |
+| Superior Material DC | 20 | DC for working superior-quality materials. |
+| Masterwork Material DC | 24 | DC for working masterwork-quality materials. |
+| Mend DC | 14 | DC for the Mend Party Clothing activity. |
+| Strong Success Delta | 8 | How far above/below DC counts as strong success/failure. |
+| Materials Per Copper | 15 | Divisor for the price→materials formula: `max(1, round(priceInCopper / this))`. |
+
+## Usage
+
+1. **Open the Hub** — Click the **Tailoring** button on a character sheet (requires Tailoring training rank ≥ 1).
+2. **Import materials** — Drag items from the sidebar into the Hub's import zone to tag them as tailoring materials.
+3. **Select an activity** — Click an activity card. Locked activities show their required tier.
+4. **Choose materials and options** — Each activity opens a setup dialog: select materials, pick an output item, choose party members (Mend), set disguise type and context (Disguise), or drag an affix (Modification).
+5. **Roll** — The GM's client runs the skill check; the player rolls in their own dialog.
+6. **Review** — A convert dialog shows what will be consumed and produced at the rolled quality. Approve or cancel.
+7. **GM confirms** — A proposal chat card appears with a GM-only confirm button. The GM clicks confirm to perform the write.
+
+## How It Works (Technical)
+
+The module uses Foundry v14's `User#query` system for all cross-client communication — no sockets. The flow is two GM pings:
+
+1. **`crucible-tailoring.requestRoll`** — GM resolves the actor, validates tool possession, builds the check via `getSkillCheck`, and runs `StandardCheck.request()` so the player rolls in their own dialog. Returns `{ok, total, band, quality}`.
+2. **`crucible-tailoring.proposeOutput`** — GM posts a flagged chat card with a confirm button. On confirm, re-validates inputs, handles stackable quantity decrement, and performs the write.
+
+Seed items (tools, trade goods, outputs, consumables) are created automatically on first load via `ensureSeedItems()`. Modifications are affix references, not items — the GM authors real affixes in a compendium.
+
+Mend boons use infinite-duration ActiveEffects cleared by a `Hooks.on("rest", …)` listener, since Crucible has no "until next rest" duration primitive.
+
+## Compatibility
+
+This module targets Crucible's crafting and skill-check APIs and uses Foundry V14 APIs including `ApplicationV2`, `DialogV2`, `CONFIG.queries`, `User#query`, and Handlebars template rendering.
+
+It is designed to be non-destructive — all world mutations happen in a single `confirmProposal()` function in `chat.mjs`. Proposal state is stored as a flag on the chat message. No core Crucible data models are modified.
 
 ## License
 
-MIT
+This module is released under the [MIT License](LICENSE).
