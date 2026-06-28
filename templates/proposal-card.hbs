@@ -1,0 +1,45 @@
+<div class="crucible-tailoring proposal-card">
+  <header class="proposal-header">
+    <h3>{{localize "crucible-tailoring.proposal.title"}}: {{activityLabel}}</h3>
+    <span class="proposal-actor">{{localize "crucible-tailoring.proposal.crafter"}}: {{actorName}}</span>
+  </header>
+
+  <div class="proposal-body">
+    <div class="proposal-inputs">
+      <h4>{{localize "crucible-tailoring.proposal.inputs"}}</h4>
+      <ul class="proposal-item-list">
+        {{#each inputItems}}
+        <li class="proposal-item">
+          <img src="{{img}}" alt="{{name}}" />
+          <span>{{name}}</span>
+        </li>
+        {{/each}}
+      </ul>
+    </div>
+
+    <div class="proposal-arrow">
+      <i class="fas fa-arrow-right"></i>
+    </div>
+
+    <div class="proposal-output">
+      <h4>{{localize "crucible-tailoring.proposal.output"}}</h4>
+      <div class="proposal-output-detail">
+        <span class="proposal-quality quality-{{quality}}">{{quality}}</span>
+        <span class="proposal-band">{{bandLabel}}</span>
+      </div>
+      {{#if outputSpec.name}}
+      <div class="proposal-output-item">
+        <img src="{{outputSpec.img}}" alt="{{outputSpec.name}}" />
+        <span>{{outputSpec.name}}</span>
+      </div>
+      {{/if}}
+    </div>
+  </div>
+
+  <footer class="proposal-footer">
+    <button class="crucible-tailoring-confirm" type="button">
+      <i class="fas fa-check"></i> {{localize "crucible-tailoring.proposal.confirm"}}
+    </button>
+    <span class="proposal-gm-note">{{localize "crucible-tailoring.proposal.gmOnly"}}</span>
+  </footer>
+</div>

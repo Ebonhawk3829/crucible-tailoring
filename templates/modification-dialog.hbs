@@ -1,0 +1,43 @@
+<div class="crucible-tailoring modification-dialog">
+  <div class="modification-layout">
+    <div class="modification-side">
+      <h4>{{localize "crucible-tailoring.modification.sourceItem"}}</h4>
+      {{#if sourceItem}}
+      <div class="modification-item-card">
+        <img src="{{sourceItem.img}}" alt="{{sourceItem.name}}" />
+        <span class="modification-item-name">{{sourceItem.name}}</span>
+        <span class="quality-{{sourceItem.quality}}">{{sourceItem.quality}}</span>
+      </div>
+      {{/if}}
+    </div>
+
+    <div class="modification-arrow">
+      <i class="fas fa-arrow-right"></i>
+    </div>
+
+    <div class="modification-side">
+      <h4>{{localize "crucible-tailoring.modification.outputItem"}}</h4>
+      <div class="modification-drop-zone" data-action="affix-drop">
+        {{#if hasAffix}}
+        <div class="modification-item-card modified">
+          <img src="{{sourceItem.img}}" alt="{{sourceItem.name}}" />
+          <span class="modification-item-name">{{sourceItem.name}}</span>
+          <div class="modification-affix-badge">
+            <img src="{{selectedAffix.img}}" alt="{{selectedAffix.name}}" />
+            <span>+ {{selectedAffix.name}}</span>
+          </div>
+        </div>
+        {{else}}
+        <i class="fas fa-download"></i>
+        <span>{{localize "crucible-tailoring.modification.dropPrompt"}}</span>
+        {{/if}}
+      </div>
+    </div>
+  </div>
+
+  <footer class="modification-footer">
+    <button type="button" data-action="confirm-modification" {{#unless hasAffix}}disabled{{/unless}}>
+      <i class="fas fa-check"></i> {{localize "crucible-tailoring.modification.confirm"}}
+    </button>
+  </footer>
+</div>

@@ -1,0 +1,17 @@
+# Design documents (not for distribution)
+project-brief
+Crucible Tailoring Tradeskill — Homebrew Proposal.md
+
+# Dependencies
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+*.code-workspace
+
+# Foundry VTT (don't commit world data if this ends up in a world folder)
+*.lock

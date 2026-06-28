@@ -1,0 +1,98 @@
+<div class="crucible-tailoring hub">
+  <header class="hub-header">
+    <h2>{{localize "crucible-tailoring.hub.title"}}</h2>
+    <div class="hub-actor-info">
+      <span class="hub-rank">{{localize "crucible-tailoring.hub.rank"}}: {{rankLabel}}</span>
+      <span class="hub-bonus">{{localize "crucible-tailoring.hub.bonus"}}: {{bonus}}</span>
+    </div>
+  </header>
+
+  <section class="hub-section">
+    <h3>{{localize "crucible-tailoring.hub.activities"}}</h3>
+    <div class="hub-activities">
+      {{#each activities}}
+      <div class="activity-card {{#unless available}}activity-locked{{/unless}}"
+           data-activity="{{id}}">
+        <div class="activity-icon">
+          <i class="fas {{icon}}"></i>
+        </div>
+        <div class="activity-info">
+          <h4>{{label}}</h4>
+          <p class="activity-desc">{{description}}</p>
+          {{#unless available}}
+          <p class="activity-requirement">{{localize "crucible-tailoring.hub.requires"}}: {{requiredTier}}</p>
+          {{/unless}}
+        </div>
+      </div>
+      {{/each}}
+    </div>
+  </section>
+
+  <section class="hub-section">
+    <h3>{{localize "crucible-tailoring.hub.materials"}}</h3>
+    <div class="hub-materials">
+      {{#if materials.length}}
+      <ul class="material-list">
+        {{#each materials}}
+        <li class="material-item" data-item-id="{{id}}">
+          <img src="{{img}}" alt="{{name}}" class="material-icon" />
+          <span class="material-name">{{name}}</span>
+          {{#if quantity}}
+          <span class="material-qty">x{{quantity}}</span>
+          {{/if}}
+          <span class="material-quality quality-{{quality}}">{{quality}}</span>
+        </li>
+        {{/each}}
+      </ul>
+      {{else}}
+      <p class="hub-empty">{{localize "crucible-tailoring.hub.noMaterials"}}</p>
+      {{/if}}
+    </div>
+    <div class="hub-import-zone" data-action="import-material">
+      <i class="fas fa-download"></i>
+      <span>{{localize "crucible-tailoring.hub.importPrompt"}}</span>
+    </div>
+  </section>
+
+  <section class="hub-section">
+    <h3>{{localize "crucible-tailoring.hub.recipeBox"}}</h3>
+    <div class="hub-recipe-box" data-action="recipe-drop">
+      {{#if recipeResult}}
+      <div class="recipe-result">
+        <img src="{{recipeResult.img}}" alt="{{recipeResult.name}}" />
+        <div class="recipe-info">
+          <strong>{{recipeResult.name}}</strong>
+          <span>{{localize "crucible-tailoring.hub.materialsRequired"}}: {{recipeResult.materialsRequired}}</span>
+          <span class="recipe-price">{{localize "crucible-tailoring.hub.price"}}: {{recipeResult.priceInCopper}} cp</span>
+        </div>
+      </div>
+      {{else}}
+      <i class="fas fa-box-open"></i>
+      <span>{{localize "crucible-tailoring.hub.recipeDropPrompt"}}</span>
+      {{/if}}
+    </div>
+  </section>
+
+  <section class="hub-section">
+    <h3>{{localize "crucible-tailoring.hub.tools"}}</h3>
+    <div class="hub-tools">
+      {{#if tools.length}}
+      <ul class="tool-list">
+        {{#each tools}}
+        <li class="tool-item {{#if possessed}}tool-possessed{{else}}tool-missing{{/if}}">
+          <img src="{{img}}" alt="{{name}}" class="tool-icon" />
+          <span class="tool-name">{{name}}</span>
+          {{#if possessed}}
+          <i class="fas fa-check tool-check"></i>
+          {{else}}
+          <i class="fas fa-times tool-missing-icon"></i>
+          {{/if}}
+        </li>
+        {{/each}}
+      </ul>
+      {{else}}
+      <p class="hub-empty">{{localize "crucible-tailoring.hub.noTools"}}</p>
+      {{/if}}
+    </div>
+  </section>
+</div>

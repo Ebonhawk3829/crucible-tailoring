@@ -1,0 +1,124 @@
+{
+  "crucible-tailoring": {
+    "gate": {
+      "untrained": "You lack the Tailoring training required to use the Tailoring Hub."
+    },
+    "hub": {
+      "title": "Tailoring Hub",
+      "launch": "Tailoring",
+      "rank": "Rank",
+      "bonus": "Bonus",
+      "activities": "Activities",
+      "materials": "Materials",
+      "noMaterials": "No tailoring materials found. Drag items from the sidebar into the import zone below to tag them.",
+      "importPrompt": "Drop items here to import as tailoring materials",
+      "materialImported": "{name} has been tagged as a tailoring material.",
+      "recipeBox": "Recipe Calculator",
+      "recipeDropPrompt": "Drag an item here to calculate materials required",
+      "materialsRequired": "Materials required",
+      "price": "Price",
+      "tools": "Tools",
+      "noTools": "No tailoring tools seeded.",
+      "requires": "Requires"
+    },
+    "activity": {
+      "craftTradeGoods": {
+        "label": "Craft Trade Goods",
+        "description": "Convert materials into sellable trade goods."
+      },
+      "craftEquipment": {
+        "label": "Craft Equipment",
+        "description": "Craft clothing, armour, or accessories from materials."
+      },
+      "mend": {
+        "label": "Mend Party Clothing",
+        "description": "Mend and present the party's clothing for social boons."
+      },
+      "craftDisguise": {
+        "label": "Craft Disguise",
+        "description": "Create a social or environmental disguise."
+      },
+      "applyModification": {
+        "label": "Apply Modification",
+        "description": "Apply a tailoring modification to cloth or leather equipment."
+      }
+    },
+    "band": {
+      "strongSuccess": "Strong Success",
+      "success": "Success",
+      "failure": "Failure",
+      "strongFailure": "Strong Failure"
+    },
+    "proposal": {
+      "title": "Tailoring Proposal",
+      "crafter": "Crafter",
+      "inputs": "Consuming",
+      "output": "Producing",
+      "confirm": "Confirm",
+      "gmOnly": "GM only"
+    },
+    "confirm": {
+      "gmOnly": "Only the GM can confirm tailoring proposals.",
+      "alreadyResolved": "This proposal has already been resolved.",
+      "actorNotFound": "Could not resolve the crafting actor.",
+      "inputsChanged": "The actor no longer holds the claimed inputs. Inventory may have changed.",
+      "confirmed": "Confirmed",
+      "success": "Tailoring proposal confirmed and applied."
+    },
+    "query": {
+      "noGM": "No GM available to process tailoring. Try again when a GM is online.",
+      "rollTimeout": "The roll request timed out. The player may have disconnected.",
+      "proposalPending": "You already have a pending tailoring proposal. Wait for the GM to resolve it.",
+      "missingToolkit": "You need a Tailor's Toolkit to perform this activity.",
+      "missingPortableWorkbench": "You need a Tailor's Portable Workbench to perform this activity.",
+      "missingRepairKit": "You need a Repair Kit (tailor) to mend clothing."
+    },
+    "convert": {
+      "title": "Review Craft Result",
+      "consuming": "Consuming",
+      "producing": "Producing",
+      "quality": "Quality",
+      "nothing": "Nothing (materials ruined)",
+      "strongFailureWarning": "Strong failure: materials will be consumed but nothing will be produced.",
+      "approve": "Approve & Send to GM",
+      "cancel": "Cancel"
+    },
+    "modification": {
+      "title": "Apply Modification",
+      "sourceItem": "Source Item",
+      "outputItem": "Modified Output",
+      "dropPrompt": "Drag an affix from the compendium here",
+      "confirm": "Apply Modification",
+      "noAffix": "Drag an affix onto the output side first."
+    },
+    "flow": {
+      "noMaterials": "You have no tailoring materials. Import materials first using the import zone.",
+      "invalidPayload": "Could not assemble the craft request. Check your selections.",
+      "proposalSent": "Proposal sent to GM for confirmation.",
+      "selectMaterials": "Select materials to use:",
+      "selectMaterialsTitle": "Select Materials",
+      "materialCount": "Select between {min} and {max} materials.",
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "selectOutput": "Select an item to craft:",
+      "selectOutputTitle": "Select Output",
+      "selectPartyMembers": "Select party members to mend for:",
+      "selectPartyMembersTitle": "Select Party Members",
+      "selectDisguiseType": "Select disguise type:",
+      "selectDisguiseTitle": "Craft Disguise",
+      "disguiseSocial": "Social Disguise (Deception boons)",
+      "disguiseEnvironmental": "Environmental Disguise (Stealth boons)",
+      "disguiseContext": "Context / role (e.g. 'merchant in Ordain', 'forest terrain'):",
+      "disguiseContextPlaceholder": "Describe the disguise context...",
+      "selectSourceItem": "Select the item to modify:",
+      "selectSourceItemTitle": "Select Item to Modify",
+      "noEligibleItems": "No eligible cloth or leather items found on this character."
+    },
+    "mend": {
+      "noBoons": "This mending has no boons to apply (shoddy quality).",
+      "effectName": "Mended Presentation",
+      "effectDescription": "The party's clothing has been expertly mended. +{boonCount} to social skill checks where appearance matters.",
+      "applied": "Mended Presentation applied: +{boonCount} to social skills until next rest."
+    }
+  }
+}

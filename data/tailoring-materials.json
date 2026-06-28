@@ -1,0 +1,288 @@
+{
+  "$schema": "crucible-tailoring/seed.v1",
+  "_meta": {
+    "description": "Seed list of tailoring-relevant items for the Crucible Tailoring module. Entries with a populated `system` block are created in-world via Item.create() at init if no existing world item carries a matching _tailoring.compendiumKey flag. Raw textile materials are intentionally NOT seeded — they are added at runtime via the module's drag-from-compendium import panel.",
+    "identityKey": "_tailoring.compendiumKey is the canonical identity key. ensureSeedItems() checks for an existing world item with a matching flag; if none exists, creates from the seed entry.",
+    "priceNote": "system.price is the BASE price at standard quality. Crucible scales displayed price at runtime via computePrice(base, rarity); do not pre-scale.",
+    "qualityTiers": ["shoddy", "standard", "fine", "superior", "masterwork"]
+  },
+
+  "tools": [
+    {
+      "type": "tool",
+      "name": "Tailor's Toolkit",
+      "system": { "category": "crafting", "quality": "standard", "price": 1200, "weight": 20, "skills": ["tailoring"] },
+      "_tailoring": { "role": "tool", "compendiumKey": "tailorsToolkit00", "primary": true }
+    },
+    {
+      "type": "tool",
+      "name": "Tailor's Portable Workbench",
+      "system": { "category": "crafting", "quality": "standard", "price": 3000, "weight": 20, "skills": ["tailoring"] },
+      "_tailoring": { "role": "tool", "compendiumKey": "tailorsPortableW", "portable": true }
+    },
+    {
+      "type": "tool",
+      "name": "Repair Kit (tailor)",
+      "system": { "category": "crafting", "quality": "standard", "price": 120, "weight": 3, "skills": ["tailoring"] },
+      "_tailoring": { "role": "tool", "compendiumKey": "repairKitTailor0", "usedBy": ["mend"] }
+    }
+  ],
+
+  "tradeGoods": [
+    {
+      "type": "loot",
+      "name": "Tailored Trade Goods",
+      "img": "icons/commodities/cloth/cloth-bolt-gray.webp",
+      "system": {
+        "category": "treasure",
+        "quality": "standard",
+        "price": 50,
+        "weight": 1,
+        "quantity": 1,
+        "properties": ["stackable"],
+        "description": {
+          "public": "<p>Finished textile goods — bolts of cloth, tailored garments, embroidered cloaks, or worked leather — produced by a skilled tailor for sale or trade. Their value scales with the quality of their craftsmanship.</p>"
+        }
+      },
+      "_tailoring": {
+        "role": "tradeGood",
+        "authorable": true,
+        "producedBy": ["craftTradeGoods"],
+        "qualityScales": true,
+        "note": "Base price 50 at standard quality; Crucible's rarity-price scaling raises value at fine/superior/masterwork automatically. The Craft Trade Goods activity creates this item at the quality dictated by the success band."
+      }
+    }
+  ],
+
+  "outputs": {
+    "_note": "Items the craft/equip activities can produce. These are real base items in the compendium that accept quality upgrades; an output spec points at one of these plus a target quality tier.",
+    "armor": [
+      { "type": "armor", "name": "Common Clothing", "system": { "category": "unarmored", "quality": "standard", "price": 20, "weight": 1 }, "_tailoring": { "role": "output", "compendiumKey": "commonClothing00" } },
+      { "type": "armor", "name": "Dress Clothing", "system": { "category": "unarmored", "quality": "standard", "price": 60, "weight": 2 }, "_tailoring": { "role": "output", "compendiumKey": "dressClothing000" } },
+      { "type": "armor", "name": "Padded Armor", "system": { "category": "light", "quality": "standard", "price": 200, "weight": 5 }, "_tailoring": { "role": "output", "compendiumKey": "paddedArmor00000" } },
+      { "type": "armor", "name": "Leather Armor", "system": { "category": "light", "quality": "standard", "price": 480, "weight": 12 }, "_tailoring": { "role": "output", "compendiumKey": "leatherArmor0000" } },
+      { "type": "armor", "name": "Studded Leather Armor", "system": { "category": "light", "quality": "standard", "price": 640, "weight": 16 }, "_tailoring": { "role": "output", "compendiumKey": "studdedLeatherAr" } },
+      { "type": "armor", "name": "Brigandine", "system": { "category": "medium", "quality": "standard", "price": 2000, "weight": 25 }, "_tailoring": { "role": "output", "compendiumKey": "brigandine000000", "composite": true } },
+      { "type": "armor", "name": "Ring Mail", "system": { "category": "medium", "quality": "standard", "price": 800, "weight": 20 }, "_tailoring": { "role": "output", "compendiumKey": "ringMail00000000", "composite": true } },
+      { "type": "armor", "name": "Scale Mail", "system": { "category": "medium", "quality": "standard", "price": 2400, "weight": 30 }, "_tailoring": { "role": "output", "compendiumKey": "scaleMail0000000", "composite": true } },
+      { "type": "armor", "name": "Heavy Hides", "system": { "category": "medium", "quality": "standard", "price": 400, "weight": 20 }, "_tailoring": { "role": "output", "compendiumKey": "heavyHides000000" } }
+    ],
+    "accessories": [
+      { "type": "accessory", "name": "Cloak", "system": { "category": "clothing", "quality": "standard", "price": 50, "weight": 1 }, "_tailoring": { "role": "output", "compendiumKey": "cloak00000000000", "template": true } },
+      { "type": "accessory", "name": "Belt", "system": { "category": "clothing", "quality": "standard", "price": 20, "weight": 0 }, "_tailoring": { "role": "output", "compendiumKey": "belt000000000000", "template": true } },
+      { "type": "accessory", "name": "Bracer", "system": { "category": "clothing", "quality": "standard", "price": 50, "weight": 1 }, "_tailoring": { "role": "output", "compendiumKey": "bracer0000000000", "template": true } },
+      { "type": "accessory", "name": "Helm", "system": { "category": "clothing", "quality": "standard", "price": 50, "weight": 1 }, "_tailoring": { "role": "output", "compendiumKey": "helm000000000000", "template": true } },
+      { "type": "accessory", "name": "Weather Clothing", "system": { "category": "clothing", "quality": "standard", "price": 40, "weight": 2 }, "_tailoring": { "role": "output", "compendiumKey": "weatherClothing0" } },
+      { "type": "accessory", "name": "Expanded Toolbelt", "system": { "category": "clothing", "quality": "standard", "price": 100, "weight": 3 }, "_tailoring": { "role": "output", "compendiumKey": "expandedToolbelt" } }
+    ]
+  },
+
+  "materials": {
+    "_note": "Only catalogued, confirmed items are seeded. All raw textiles (wool, cloth, leather, thread, scraps, hides) are added at runtime via the drag-from-compendium import panel — there is no source to seed them from.",
+    "confirmed": [
+      { "type": "loot", "name": "Blanket", "system": { "category": "other", "quality": "standard", "price": 60, "weight": 4 }, "_tailoring": { "role": "material", "compendiumKey": "blanket000000000" } }
+    ]
+  },
+
+  "modifications": {
+    "_note": "Tailoring modifications are the physical-artisanship equivalent of enchanted affixes. They occupy affix slots on cloth and leather equipment, sharing the item's total affix capacity with enchanted affixes. These are NOT items to be created via Item.create() — they are reference metadata describing affixes that the GM authors in a compendium using Crucible's native affix system (AFFIX_TYPES, prefix/suffix). The Apply Modification dialog lets the player drag a real affix from the compendium onto the output side; these seed entries exist so the hub can display what modifications are known to the tailoring system and validate that a dragged affix is tailoring-recognized.",
+    "_rules": {
+      "slotUsage": "Each modification occupies 1 affix slot on the target item. An item's total affix capacity (determined by its quality tier: Fine=2, Superior=4, Masterwork=6) is shared between tailoring modifications and enchanted affixes.",
+      "applicableCategories": ["unarmored", "light", "medium", "clothing"],
+      "applicableItemTypes": ["armor", "accessory"],
+      "materialRequirement": "Applying a modification consumes materials of the same quality tier as the modification itself. Quantity at GM discretion; suggested default is 2 units per modification tier.",
+      "dcNote": "The Tailoring check DC is determined by the quality of materials used, per the standard material DC table in game settings.",
+      "compendiumNote": "Each entry's compendiumKey points to a real affix item the GM should create in a compendium. The seed data here is display/reference metadata only — ensureSeedItems() does NOT create these."
+    },
+    "entries": [
+      {
+        "name": "Reinforced Stitching",
+        "img": "icons/commodities/cloth/cloth-thread-needle.webp",
+        "description": "Additional layers of heavy thread reinforce stress points throughout the garment. Grants +1 Armor defense.",
+        "_tailoring": {
+          "role": "modification",
+          "compendiumKey": "modReinforcedSti",
+          "affixSlotCost": 1,
+          "applicableTo": ["armor"],
+          "tier": "journeyman",
+          "effect": "armorDefense",
+          "bonus": 1
+        }
+      },
+      {
+        "name": "Recut for Mobility",
+        "img": "icons/commodities/cloth/cloth-bolt-gray.webp",
+        "description": "Panels are recut and seams repositioned to eliminate binding and restriction. Grants +1 Dodge.",
+        "_tailoring": {
+          "role": "modification",
+          "compendiumKey": "modRecutMobilit",
+          "affixSlotCost": 1,
+          "applicableTo": ["armor"],
+          "tier": "journeyman",
+          "effect": "dodge",
+          "bonus": 1
+        }
+      },
+      {
+        "name": "Muffled Materials",
+        "img": "icons/commodities/leather/leather-patch.webp",
+        "description": "Leather is treated with oils to prevent creaking; cloth is layered to absorb sound; edges are bound to eliminate rustle. Grants +1 Stealth.",
+        "_tailoring": {
+          "role": "modification",
+          "compendiumKey": "modMuffledMater",
+          "affixSlotCost": 1,
+          "applicableTo": ["armor", "accessory"],
+          "tier": "journeyman",
+          "effect": "stealth",
+          "bonus": 1
+        }
+      },
+      {
+        "name": "Concealed Pockets",
+        "img": "icons/containers/bags/pack-leather-embossed-brown.webp",
+        "description": "Hidden compartments are sewn into linings and seams, invisible to casual inspection. Grants +1 Sleight of Hand for concealing small items on your person.",
+        "_tailoring": {
+          "role": "modification",
+          "compendiumKey": "modConcealedPoc",
+          "affixSlotCost": 1,
+          "applicableTo": ["armor", "accessory"],
+          "tier": "journeyman",
+          "effect": "sleightOfHand",
+          "bonus": 1
+        }
+      },
+      {
+        "name": "Impact-Absorbing Lining",
+        "img": "icons/commodities/cloth/cloth-bolt-gray.webp",
+        "description": "Layered padding is quilted into the interior, dispersing force from falls and blows. Reduces falling damage by 1d6.",
+        "_tailoring": {
+          "role": "modification",
+          "compendiumKey": "modImpactAbsorb",
+          "affixSlotCost": 1,
+          "applicableTo": ["armor"],
+          "tier": "journeyman",
+          "effect": "fallDamageReduction",
+          "bonus": "1d6"
+        }
+      },
+      {
+        "name": "Fitted Construction",
+        "img": "icons/commodities/cloth/cloth-thread-needle.webp",
+        "description": "The garment is precisely tailored to the wearer's measurements, eliminating chafing and restriction. Grants +1 Reflex.",
+        "_tailoring": {
+          "role": "modification",
+          "compendiumKey": "modFittedConstr",
+          "affixSlotCost": 1,
+          "applicableTo": ["armor", "accessory"],
+          "tier": "journeyman",
+          "effect": "reflex",
+          "bonus": 1
+        }
+      },
+      {
+        "name": "Weather-Treated Materials",
+        "img": "icons/commodities/leather/leather-buckle-belt.webp",
+        "description": "Fabrics are oiled and waxed for water resistance; leather is sealed against moisture. Grants +1 Survival in extreme weather conditions.",
+        "_tailoring": {
+          "role": "modification",
+          "compendiumKey": "modWeatherTreate",
+          "affixSlotCost": 1,
+          "applicableTo": ["armor", "accessory"],
+          "tier": "journeyman",
+          "effect": "survival",
+          "bonus": 1,
+          "conditional": "extreme weather"
+        }
+      }
+    ]
+  },
+
+  "disguises": {
+    "_note": "Disguises are clothing-type equipment items produced by the Craft Disguise activity (Journeyman tier). Each disguise is crafted for a specific person and a specific context. They are bulky (meaningful inventory weight), take time to don (10-15 minutes), are context-specific (a merchant disguise fails at a military checkpoint), and are reusable but degrade over time at GM discretion. The boon count is set at craft time based on the material quality used.",
+    "_rules": {
+      "materialsRequired": 4,
+      "craftingTime": "Full day of downtime (not a single rest)",
+      "itemType": "armor",
+      "itemCategory": "unarmored",
+      "weight": 8,
+      "donTime": "10-15 minutes in-game",
+      "boonScale": { "shoddy": 0, "standard": 1, "fine": 2, "superior": 3, "masterwork": 4 }
+    },
+    "templates": [
+      {
+        "type": "armor",
+        "name": "Social Disguise",
+        "img": "icons/equipment/chest/robe-layered-blue.webp",
+        "system": {
+          "category": "unarmored",
+          "quality": "standard",
+          "price": 80,
+          "weight": 8,
+          "description": {
+            "public": "<p>A complete costume designed to help the wearer pass as someone they are not. Includes appropriate clothing, accessories, and details for the intended role.</p><p><strong>Context:</strong> {{context}}</p><p><strong>Boons:</strong> +{{boonCount}} to Deception checks to maintain this cover.</p>"
+          }
+        },
+        "_tailoring": {
+          "role": "disguise",
+          "compendiumKey": "disguiseSocial0",
+          "disguiseType": "social",
+          "boonSkill": "deception",
+          "contextPlaceholder": true,
+          "note": "context and boonCount are filled at craft time. The GM determines when the disguise is appropriate for the current situation and when it has outlived its usefulness."
+        }
+      },
+      {
+        "type": "armor",
+        "name": "Environmental Disguise",
+        "img": "icons/equipment/chest/robe-layered-green.webp",
+        "system": {
+          "category": "unarmored",
+          "quality": "standard",
+          "price": 80,
+          "weight": 8,
+          "description": {
+            "public": "<p>Camouflage coverings tailored to blend into a specific terrain. Includes coloured cloth wraps, netting, and material treated to match the target environment.</p><p><strong>Terrain:</strong> {{context}}</p><p><strong>Boons:</strong> +{{boonCount}} to Stealth checks in this terrain.</p>"
+          }
+        },
+        "_tailoring": {
+          "role": "disguise",
+          "compendiumKey": "disguiseEnviron0",
+          "disguiseType": "environmental",
+          "boonSkill": "stealth",
+          "contextPlaceholder": true,
+          "note": "context and boonCount are filled at craft time. Examples of terrain contexts: forest, grassland, mountain, urban, underground, desert, arctic, coastal."
+        }
+      }
+    ]
+  },
+
+  "consumables": {
+    "_note": "Consumable items produced by tailoring activities. Currently only Mend produces a consumable; future activities may add more.",
+    "mend": {
+      "type": "consumable",
+      "name": "Mended Presentation",
+      "img": "icons/commodities/cloth/cloth-thread-needle.webp",
+      "system": {
+        "category": "consumable",
+        "quality": "standard",
+        "price": 0,
+        "weight": 0,
+        "quantity": 1,
+        "description": {
+          "public": "<p>The party's clothing and travel gear has been expertly mended, pressed, and presented. Everyone looks put-together rather than road-worn — cleaner, sharper, more credible in social situations.</p><p><strong>Quality:</strong> {{materialQuality}}</p><p><strong>Boons:</strong> +{{boonCount}} to social skill checks (Diplomacy, Deception, Intimidation, Persuasion, Society) where appearance and presentation matter.</p><p><strong>Duration:</strong> Lasts until the party takes a rest.</p><p><em>Use this item to apply the boon to yourself.</em></p>"
+        }
+      },
+      "_tailoring": {
+        "role": "consumable",
+        "compendiumKey": "mendConsumable0",
+        "producedBy": ["mend"],
+        "useEffect": "applyMendBoons",
+        "boonScale": { "shoddy": 0, "standard": 1, "fine": 2, "superior": 3, "masterwork": 4 },
+        "boonSkills": ["diplomacy", "deception", "intimidation", "persuasion", "society"],
+        "duration": "infinite",
+        "durationNote": "Crucible has no 'until next rest' duration primitive. The AE is created with infinite duration ({value: 0, units: 'rounds'}). The module registers a Hooks.on('rest', …) listener that finds and deletes all Mend boon AEs from resting actors when a rest completes.",
+        "note": "materialQuality and boonCount are filled at craft time. When the player uses this consumable, it applies an Active Effect granting the boon to the user with infinite duration. The effect is cleared by the module's rest hook, not by the duration system."
+      }
+    }
+  }
+}

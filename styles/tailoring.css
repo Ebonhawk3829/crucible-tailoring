@@ -1,0 +1,506 @@
+/* crucible-tailoring styles */
+
+/* --- Hub window --- */
+.crucible-tailoring.hub-window {
+  font-family: var(--font-primary, "Signika", sans-serif);
+}
+
+.crucible-tailoring .hub {
+  padding: 0.5rem;
+}
+
+.crucible-tailoring .hub-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--color-border-dark, #782e22);
+  margin-bottom: 0.75rem;
+}
+
+.crucible-tailoring .hub-header h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  border: none;
+}
+
+.crucible-tailoring .hub-actor-info {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.9rem;
+  color: var(--color-text-secondary, #666);
+}
+
+.crucible-tailoring .hub-rank,
+.crucible-tailoring .hub-bonus {
+  font-weight: 600;
+}
+
+/* --- Sections --- */
+.crucible-tailoring .hub-section {
+  margin-bottom: 1rem;
+}
+
+.crucible-tailoring .hub-section h3 {
+  font-size: 1rem;
+  border-bottom: 1px solid var(--color-border-light, #ccc);
+  padding-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+/* --- Activities --- */
+.crucible-tailoring .hub-activities {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.crucible-tailoring .activity-card {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid var(--color-border-light, #ccc);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.crucible-tailoring .activity-card:hover {
+  background: var(--color-bg-hover, rgba(0,0,0,0.05));
+}
+
+.crucible-tailoring .activity-locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.crucible-tailoring .activity-icon {
+  font-size: 1.5rem;
+  width: 2rem;
+  text-align: center;
+  align-self: center;
+  color: var(--color-text-secondary, #666);
+}
+
+.crucible-tailoring .activity-info h4 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.crucible-tailoring .activity-desc {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary, #666);
+}
+
+.crucible-tailoring .activity-requirement {
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  color: var(--color-level-error, #c00);
+  font-style: italic;
+}
+
+/* --- Materials --- */
+.crucible-tailoring .material-list,
+.crucible-tailoring .tool-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.crucible-tailoring .material-item,
+.crucible-tailoring .tool-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--color-border-light, #eee);
+}
+
+.crucible-tailoring .material-icon,
+.crucible-tailoring .tool-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  border: none;
+}
+
+.crucible-tailoring .material-name,
+.crucible-tailoring .tool-name {
+  flex: 1;
+  font-size: 0.85rem;
+}
+
+.crucible-tailoring .material-qty {
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary, #666);
+}
+
+.crucible-tailoring .material-quality {
+  font-size: 0.7rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  text-transform: capitalize;
+}
+
+/* Quality colours */
+.crucible-tailoring .quality-shoddy { background: #999; color: #fff; }
+.crucible-tailoring .quality-standard { background: #5a8; color: #fff; }
+.crucible-tailoring .quality-fine { background: #48b; color: #fff; }
+.crucible-tailoring .quality-superior { background: #a4d; color: #fff; }
+.crucible-tailoring .quality-masterwork { background: #d90; color: #fff; }
+
+/* --- Import zone --- */
+.crucible-tailoring .hub-import-zone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+  border: 2px dashed var(--color-border-light, #ccc);
+  border-radius: 6px;
+  color: var(--color-text-secondary, #666);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.crucible-tailoring .hub-import-zone:hover {
+  border-color: var(--color-border-highlight, #48b);
+  background: rgba(0,0,0,0.03);
+}
+
+/* --- Recipe box --- */
+.crucible-tailoring .hub-recipe-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 2px dashed var(--color-border-light, #ccc);
+  border-radius: 6px;
+  color: var(--color-text-secondary, #666);
+  min-height: 3rem;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.crucible-tailoring .hub-recipe-box:hover {
+  border-color: var(--color-border-highlight, #48b);
+  background: rgba(0,0,0,0.03);
+}
+
+.crucible-tailoring .recipe-result {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.crucible-tailoring .recipe-result img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border: none;
+}
+
+.crucible-tailoring .recipe-info {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+}
+
+.crucible-tailoring .recipe-price {
+  color: var(--color-text-secondary, #666);
+  font-size: 0.75rem;
+}
+
+/* --- Tools --- */
+.crucible-tailoring .tool-possessed .tool-check {
+  color: var(--color-level-success, #3a3);
+}
+
+.crucible-tailoring .tool-missing .tool-missing-icon {
+  color: var(--color-level-error, #c00);
+}
+
+.crucible-tailoring .tool-missing {
+  opacity: 0.6;
+}
+
+/* --- Empty state --- */
+.crucible-tailoring .hub-empty {
+  font-style: italic;
+  color: var(--color-text-secondary, #666);
+  font-size: 0.85rem;
+}
+
+/* --- Proposal card --- */
+.crucible-tailoring.proposal-card {
+  padding: 0.5rem;
+}
+
+.crucible-tailoring .proposal-header {
+  border-bottom: 1px solid var(--color-border-light, #ccc);
+  padding-bottom: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.crucible-tailoring .proposal-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  border: none;
+}
+
+.crucible-tailoring .proposal-actor {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary, #666);
+}
+
+.crucible-tailoring .proposal-body {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.crucible-tailoring .proposal-inputs,
+.crucible-tailoring .proposal-output {
+  flex: 1;
+}
+
+.crucible-tailoring .proposal-inputs h4,
+.crucible-tailoring .proposal-output h4 {
+  font-size: 0.85rem;
+  margin: 0 0 0.25rem;
+}
+
+.crucible-tailoring .proposal-arrow {
+  font-size: 1.5rem;
+  color: var(--color-text-secondary, #666);
+}
+
+.crucible-tailoring .proposal-item-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.crucible-tailoring .proposal-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+}
+
+.crucible-tailoring .proposal-item img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  border: none;
+}
+
+.crucible-tailoring .proposal-output-detail {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.crucible-tailoring .proposal-quality {
+  font-size: 0.75rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  text-transform: capitalize;
+}
+
+.crucible-tailoring .proposal-band {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.crucible-tailoring .proposal-output-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+}
+
+.crucible-tailoring .proposal-output-item img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  border: none;
+}
+
+.crucible-tailoring .proposal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--color-border-light, #ccc);
+  padding-top: 0.4rem;
+}
+
+.crucible-tailoring .crucible-tailoring-confirm {
+  padding: 0.3rem 0.75rem;
+  background: var(--color-level-success, #3a3);
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.crucible-tailoring .crucible-tailoring-confirm:hover {
+  filter: brightness(1.1);
+}
+
+.crucible-tailoring .proposal-gm-note {
+  font-size: 0.7rem;
+  color: var(--color-text-secondary, #666);
+  font-style: italic;
+}
+
+/* --- Resolved proposal --- */
+.crucible-tailoring .proposal-resolved {
+  position: relative;
+}
+
+.crucible-tailoring .proposal-confirmed-badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: var(--color-level-success, #3a3);
+  color: #fff;
+  padding: 0.2rem 0.5rem;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* --- Launch button on actor sheet --- */
+.crucible-tailoring-launch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: var(--color-text-primary, #191813);
+  border: 1px solid var(--color-border-light, #ccc);
+  border-radius: 3px;
+  margin-left: 0.5rem;
+}
+
+.crucible-tailoring-launch:hover {
+  background: var(--color-bg-hover, rgba(0,0,0,0.05));
+  text-shadow: none;
+}
+
+/* --- Modification dialog --- */
+.crucible-tailoring .modification-layout {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+}
+
+.crucible-tailoring .modification-side {
+  flex: 1;
+}
+
+.crucible-tailoring .modification-side h4 {
+  font-size: 0.85rem;
+  margin: 0 0 0.5rem;
+}
+
+.crucible-tailoring .modification-arrow {
+  font-size: 1.5rem;
+  color: var(--color-text-secondary, #666);
+}
+
+.crucible-tailoring .modification-item-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  border: 1px solid var(--color-border-light, #ccc);
+  border-radius: 4px;
+  background: var(--color-bg-secondary, rgba(0,0,0,0.03));
+}
+
+.crucible-tailoring .modification-item-card img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  border: none;
+}
+
+.crucible-tailoring .modification-item-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.crucible-tailoring .modification-drop-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 2px dashed var(--color-border-light, #ccc);
+  border-radius: 6px;
+  min-height: 6rem;
+  color: var(--color-text-secondary, #666);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.crucible-tailoring .modification-drop-zone:hover {
+  border-color: var(--color-border-highlight, #48b);
+  background: rgba(0,0,0,0.03);
+}
+
+.crucible-tailoring .modification-affix-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.4rem;
+  background: var(--color-level-success, #3a3);
+  color: #fff;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.crucible-tailoring .modification-affix-badge img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  border: none;
+}
+
+.crucible-tailoring .modification-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.5rem 0.75rem;
+  border-top: 1px solid var(--color-border-light, #ccc);
+}
+
+.crucible-tailoring .modification-footer button {
+  padding: 0.3rem 0.75rem;
+  background: var(--color-level-success, #3a3);
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.crucible-tailoring .modification-footer button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.crucible-tailoring .modification-footer button:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
