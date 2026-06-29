@@ -77,9 +77,14 @@ Hooks.once("ready", async () => {
   console.log("crucible-tailoring | Ready");
 
   // Ensure seed items exist in the world (GM only — Item.create requires GM permission)
+  // Wrapped in try/catch so a missing or malformed seed file doesn't break module init.
   if (game.user.isGM) {
-    const { ensureSeedItems } = await import("./materials.mjs");
-    await ensureSeedItems();
+    try {
+      const { ensureSeedItems } = await import("./materials.mjs");
+      await ensureSeedItems();
+    } catch (err) {
+      console.warn("crucible-tailoring | Seed item creation failed:", err);
+    }
   }
 
   // Register query handlers (lazy import to avoid circular deps)

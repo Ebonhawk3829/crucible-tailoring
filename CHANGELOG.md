@@ -5,56 +5,63 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.4-dev] — Prerelease
+
+### Fixed
+- Hub now uses `HandlebarsApplicationMixin` — resolves "not renderable" error on open
+- Activity cards and drop zones now use the v14 actions API — prevents duplicate event listeners on re-render
+- Seed data loading now handles network errors gracefully instead of crashing module init
+- Added error handling around seed item creation in the ready hook
+
+### Changed
+- `_prepareContext` now accepts the `options` parameter to match the Handlebars mixin signature
+- `render({ force: true })` used instead of boolean positional argument (v2 style)
+
 ## [0.2.3-dev] — Prerelease
 
 ### Fixed
-- **Invalid consumable category**: seed JSON and `activity-setup.mjs` used `"consumable"` as the category for Mend consumables, but Crucible's consumable schema only accepts `ammunition`, `bomb`, `flask`, `kit`, `scroll`, `trap`, or `other`. Changed to `"other"` in both the seed and runtime output spec.
+- Fixed validation error when creating Mend consumables — category is now `"other"` instead of `"consumable"`
 
 ## [0.2.2-dev] — Prerelease
 
 ### Fixed
-- **Seed tools iteration crash**: `collectCreatableEntries` called `for...of` on `seed.tools`, which is a plain object `{ _note: "…" }` in the JSON, not an array — threw `object is not iterable` on module startup, blocking all seed item creation. Removed the dead loop; tools are never seeded as items (they're standard Crucible items checked by name in actor inventory).
+- Fixed crash on startup when loading seed items — tools section in seed data is an object, not an iterable array
 
 ## [0.2.1-dev] — Prerelease
 
 ### Fixed
-- **Actor type**: launch button and party member picker now target `"hero"` instead of `"character"` — Crucible player characters are type `"hero"` (per `actor-hero.mjs`), so the UI entry point and Mend targeting were silently returning empty before this fix
-- **ModificationDialog close hook**: replaced `Hooks.once("closeApplication", …)` with `_onClose()` override — ApplicationV2 emits `close{ClassName}`, not a generic `closeApplication`, so the Promise never resolved and the Apply Modification flow hung forever
-- **`getSkillCheck()`**: reverted to using `actor.getSkillCheck("tailoring", {dc})` which exists in Crucible 0.10.0 at `module/documents/actor.mjs` — the method correctly populates ability, skill, enchantment, boons, and banes from the actor's prepared data and fires talent hooks
-- **`check.request()` return shape**: `StandardCheck.handle()` returns a `ChatMessage` via `pool.toMessage()`, not `{total}` — `result?.total` was always `undefined`, defaulting to 0 and producing a silent strong failure every time; now reads `message.rolls[0].total` and fails loud on undefined
-- **Cancelled roll no longer silent**: `check.request()` returns `undefined` when the player cancels the roll dialog — previously the `?? 0` fallback turned cancellation into a strong failure; now returns `{ok: false, reason: "rollCancelled"}`
-- **Duplicate proposal guard**: changed `m.getFlag(MODULE_ID, FLAGS.resolved)` to `m.getFlag(MODULE_ID, FLAGS.proposal)?.resolved !== true` — `resolved` is nested inside the proposal flag object, not a top-level flag, so the check was always `undefined !== true` (always passing); same logic with a slightly stronger net
-- **`getDragEventData` import**: replaced direct import from `foundry.applications.ux.TextEditor.implementation` with a defensive fallback that tries the `implementation` path, `TextEditor.getDragEventData()`, and raw `dataTransfer` JSON parse — which path works varies across v14 builds, and undefined here silently broke all three drop zones
-- **GM-side rank re-validation**: `handleRequestRoll` now re-validates training rank (Journeyman requires rank 2 / Proficient, Novice requires rank 1 / Trained) — previously only tools were re-checked GM-side, and the query is the authoritative gate
-- **Affix document type validation**: `confirmProposal` now verifies the dragged document is `documentName === "ActiveEffect"` and `type === "affix"` before cloning its system block — Crucible stores affixes as `ActiveEffect` documents in the `affixes` compendium, so the schema clone is correct, but a non-affix drag would produce a malformed effect; now caught with a clear error
-- **XSS in convert dialog**: item names in the convert dialog are now escaped via `foundry.utils.escapeHTML()` — user-controllable item names were concatenated directly into HTML markup
-- **DialogV2.confirm dismissal**: wrapped in `try/catch` returning `false` — some v14 builds reject on Escape/X dismiss instead of resolving `false`, which would throw uncaught up through `runCraftFlow`
-- **Rank labels from Crucible source**: replaced hardcoded `RANK_LABELS` map with `getRankLabel(rank)` that reads `SYSTEM.TALENT.TRAINING_RANKS` and localizes via `game.i18n`, with English fallback
-- Added missing localization keys: `rollCancelled`, `rollFailed`, `insufficientRank`, `notAnAffix`
+- Tailoring launch button now appears on hero sheets (Crucible player characters are type `"hero"`, not `"character"`)
+- Apply Modification dialog no longer hangs — close hook now correctly listens for the right event name
+- Skill checks now resolve correctly — the roll total was always zero due to reading from the wrong return value
+- Cancelled roll dialogs now show a clear error instead of silently producing a strong failure
+- Duplicate proposal detection now works correctly — guard was reading the wrong flag path
+- Drag-and-drop now works across all supported Foundry v14 builds — import path for the drag helper varies by build
+- GM now validates training rank when processing roll requests, not just tool possession
+- Affix application now validates the dragged document is actually a Crucible affix before writing
+- Item names in the convert dialog are now escaped to prevent HTML injection
+- Dialog dismissal via Escape/close button no longer throws an unhandled error
+- Rank labels now read from Crucible's canonical source instead of a hardcoded map
+- Added missing localization keys for new error states
 
 ### Changed
-- **Mend boons → visual reminder**: the Mend AE now records a dummy ActiveEffect with `changes: []` (no mechanical changes) — boons are roll-time dice modifiers in Crucible, not persisted actor fields, and writing to `enchantmentBonus` was mechanically incorrect regardless of whether the field exists; the player/GM manually applies boon dice during relevant social checks and removes the effect after a rest
-- **Removed `Hooks.on("rest", …)` listener**: Crucible does not emit a `"rest"` hook, and with the dummy-AE approach there is no longer a need for automated cleanup
-- **`_selectSourceItem` filter documented**: clarified that accessories match only the `clothing` category (not jewelry/trinket/other) — this is the correct behavior for a tailor modifying cloth-based items
-- **Proposal document updated**: Journeyman gating changed from "Character Level 4" to "Training Rank 2 (Proficient)" to match the code's actual gating mechanism
-- **README updated**: stale API references corrected throughout
+- Mend boons are now a visual reminder only — boons are roll-time dice modifiers in Crucible and cannot be modelled as persisted field bonuses
+- Removed the rest-event listener — Crucible does not emit a rest hook
+- Updated README and design proposal to reflect actual gating mechanics
 
 ## [0.2.0-dev] —  Prerelease
 
 ### Changed
-- **Recipe box → recipe registration**: dragging an item into the recipe zone now registers it as a craftable product (sets `recipeTag` flag) instead of showing a transient calculation; a confirmation toast is shown
-- **Seed JSON restructured**: entries now have `seedAction` field — `"create"` for module-specific items (tools, trade goods, consumables, disguises) and `"reference"` for existing Crucible items (armor, accessories, materials) that just need recipe tagging
-- **`ensureSeedItems()` two-phase**: Phase 1 creates module-specific items via `Item.create()`; Phase 2 finds existing Crucible items by name+type and tags them with `recipeTag` + role flags (no more duplicate armor/accessory items)
-- **Tools removed from seed JSON**: tools are standard Crucible items checked by name in actor inventory (`TOOL_NAMES` constant); `actorHasTool()` now takes a name string instead of flag criteria
-- **`_selectOutputItem`** now uses `getRegisteredRecipes()` exclusively — all outputs are real Foundry Items, no more seed-entry fallback
-- **`activity-setup.mjs`** simplified: `craftEquipment` payload assembly no longer handles seed-entry objects
+- Recipe registration: dragging an item into the recipe zone now permanently registers it as a craftable product instead of showing a transient calculation
+- Seed data restructured with `seedAction` field: `"create"` for module-specific items, `"reference"` for existing Crucible items that just need recipe tagging
+- Item creation runs in two phases — avoids duplicating existing Crucible items
+- Tools are no longer seeded as items; they're standard Crucible items checked by name in actor inventory
+- Output selection now uses registered recipes exclusively
 
 ### Fixed
-- Replaced broken `Hooks.on("crucible.prepareAction", …)` with proper `crucible.api.hooks.action` registration keyed by item ID (`mendConsumable0000`); the global `Hooks` bus never receives Crucible actor hook events
-- Mend boons now recorded as effect events via `recordEvent()` during `postActivate` — no direct document writes, per Crucible's lifecycle guidance ("Direct actor mutations within hooks will be lost or double-applied")
-- Added sentinel guard to `registerMendHook()` to prevent double-registration across reloads
-- Made `confirmProposal` content rewrite idempotent — repeated confirms won't nest `<div>` wrappers
-- Optimized `findExistingByCompendiumKey` from O(n) linear scan to O(1) via pre-built `Map<compendiumKey, Item>` during seeding
+- Mend action hook now uses Crucible's proper actor hook API instead of the global Hooks bus
+- Mend effects are now recorded as effect events during the correct lifecycle phase
+- Repeated proposal confirmation no longer nests wrapper elements
+- Seed item lookup optimised from linear scan to map lookup
 
 ## [0.1.1-dev] —  Prerelease
 

@@ -10,7 +10,7 @@ import {
   tagItemAsRecipe
 } from "./materials.mjs";
 
-const { ApplicationV2, DialogV2 } = foundry.applications.api;
+const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /**
  * Resolve drag event data, with a fallback for v14 builds where the import
@@ -89,7 +89,7 @@ const ACTIVITIES = [
   }
 ];
 
-export class TailoringHub extends ApplicationV2 {
+export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @override */
   static DEFAULT_OPTIONS = {
     id: `${MODULE_ID}.hub`,
@@ -100,7 +100,12 @@ export class TailoringHub extends ApplicationV2 {
       resizable: true
     },
     classes: ["crucible-tailoring", "hub-window"],
-    tag: "div"
+    tag: "div",
+    actions: {
+      "activity-click": TailoringHub.#onActivityClick,
+      "recipe-drop": TailoringHub.#onRecipeDrop,
+      "import-material": TailoringHub.#onMaterialImportDrop
+    }
   };
 
   /** @override */
@@ -124,7 +129,7 @@ export class TailoringHub extends ApplicationV2 {
   static async open(actor) {
     if (!canOpenHub(actor)) return;
     const instance = new this({ actor });
-    await instance.render(true);
+    await instance.render({ force: true });
   }
 
   constructor(options = {}) {
@@ -133,7 +138,7 @@ export class TailoringHub extends ApplicationV2 {
   }
 
   /** @override */
-  async _prepareContext() {
+  async _prepareContext(options) {
     const rank = this.actor?.system?.training?.tailoring ?? 0;
     const bonus = this.actor?.getSkillBonus?.(["tailoring"]) ?? 0;
     const materials = getActorMaterials(this.actor);
@@ -191,36 +196,52 @@ export class TailoringHub extends ApplicationV2 {
   _onRender(context, options) {
     super._onRender(context, options);
 
-    // Bind activity card clicks
-    const activityCards = this.element.querySelectorAll(".activity-card:not(.activity-locked)");
-    for (const card of activityCards) {
-      card.addEventListener("click", (e) => {
-        const activityId = card.dataset.activity;
-        if (activityId) this._onActivityClick(activityId);
-      });
-    }
-
-    // Bind drag-and-drop for the recipe box
-    const recipeBox = this.element.querySelector("[data-action='recipe-drop']");
-    if (recipeBox) {
-      recipeBox.addEventListener("drop", this._onRecipeDrop.bind(this));
-      recipeBox.addEventListener("dragover", (e) => e.preventDefault());
-    }
-
-    // Bind import zone for material tagging
-    const importZone = this.element.querySelector("[data-action='import-material']");
-    if (importZone) {
-      importZone.addEventListener("drop", this._onMaterialImportDrop.bind(this));
-      importZone.addEventListener("dragover", (e) => e.preventDefault());
+    // Prevent default on drag-over for drop zones (actions API handles the drop event)
+    const dropZones = this.element.querySelectorAll("[data-action='recipe-drop'], [data-action='import-material']");
+    for (const zone of dropZones) {
+      zone.addEventListener("dragover", (e) => e.preventDefault());
     }
   }
 
   /**
-   * Handle clicking an activity card.
-   * Opens the appropriate setup dialog, then runs the craft flow.
+   * Handle clicking an activity card (invoked via actions API).
+   * @param {PointerEvent} event
+   * @param {HTMLElement} target
+   */
+  static #onActivityClick(event, target) {
+    const app = event.currentTarget.closest(".app")?.app;
+    if (!(app instanceof TailoringHub)) return;
+    // Navigate up to the card to get the activity id, since the click may land on a child element
+    const card = target.closest("[data-activity]");
+    const activityId = card?.dataset?.activity;
+    if (activityId) app.#runActivityFlow(activityId);
+  }
+
+  /**
+   * Handle dropping an item into the recipe box (invoked via actions API).
+   * @param {DragEvent} event
+   */
+  static #onRecipeDrop(event) {
+    const app = event.currentTarget.closest(".app")?.app;
+    if (!(app instanceof TailoringHub)) return;
+    app.#handleRecipeDrop(event);
+  }
+
+  /**
+   * Handle dropping an item into the material import zone (invoked via actions API).
+   * @param {DragEvent} event
+   */
+  static #onMaterialImportDrop(event) {
+    const app = event.currentTarget.closest(".app")?.app;
+    if (!(app instanceof TailoringHub)) return;
+    app.#handleMaterialImportDrop(event);
+  }
+
+  /**
+   * Run the full activity flow for a given activity.
    * @param {string} activityId
    */
-  async _onActivityClick(activityId) {
+  async #runActivityFlow(activityId) {
     const { runCraftFlow } = await import("./craft-flow.mjs");
     const { getActorMaterials } = await import("./materials.mjs");
 
@@ -605,7 +626,7 @@ export class TailoringHub extends ApplicationV2 {
    * Tags the item as a tailoring recipe (craftable product).
    * @param {DragEvent} event
    */
-  async _onRecipeDrop(event) {
+  async #handleRecipeDrop(event) {
     event.preventDefault();
     const data = getDragEventData(event);
     if (!data?.uuid) return;
@@ -625,7 +646,7 @@ export class TailoringHub extends ApplicationV2 {
    * Tags the item as a tailoring material.
    * @param {DragEvent} event
    */
-  async _onMaterialImportDrop(event) {
+  async #handleMaterialImportDrop(event) {
     event.preventDefault();
     const data = getDragEventData(event);
     if (!data?.uuid) return;

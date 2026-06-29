@@ -12,6 +12,7 @@
     <div class="hub-activities">
       {{#each activities}}
       <div class="activity-card {{#unless available}}activity-locked{{/unless}}"
+           data-action="activity-click"
            data-activity="{{id}}">
         <div class="activity-icon">
           <i class="fas {{icon}}"></i>

@@ -7,13 +7,22 @@ let _seedData = null;
 /**
  * Load the seed JSON from data/tailoring-materials.json.
  * Cached — only fetches once per session.
- * @returns {Promise<object>}
+ * @returns {Promise<object|null>}
  */
 export async function loadSeedData() {
   if (_seedData) return _seedData;
-  const resp = await fetch("modules/crucible-tailoring/data/tailoring-materials.json");
-  _seedData = await resp.json();
-  return _seedData;
+  try {
+    const resp = await fetch("modules/crucible-tailoring/data/tailoring-materials.json");
+    if (!resp.ok) {
+      console.warn("crucible-tailoring | Failed to load seed data:", resp.status, resp.statusText);
+      return null;
+    }
+    _seedData = await resp.json();
+    return _seedData;
+  } catch (err) {
+    console.warn("crucible-tailoring | Failed to load seed data:", err);
+    return null;
+  }
 }
 
 /**
@@ -153,6 +162,10 @@ function findExistingByCompendiumKey(compendiumKey, keyMap) {
  */
 export async function ensureSeedItems() {
   const seed = await loadSeedData();
+  if (!seed) {
+    console.warn("crucible-tailoring | Seed data not available — skipping seed item creation");
+    return;
+  }
 
   // ---- Phase 1: Create module-specific items ----
   const creatableEntries = collectCreatableEntries(seed);
