@@ -19,9 +19,9 @@ export async function openConvertDialog({ actor, activityId, band, quality, inpu
   const activityLabel = game.i18n.localize(`crucible-tailoring.activity.${activityId}.label`);
   const bandLabel = game.i18n.localize(`crucible-tailoring.band.${band}`);
 
-  // Build the content HTML
+  // Build the content HTML — escape user-controllable names to prevent injection
   const inputList = inputs.map(i =>
-    `<li><img src="${i.img}" alt="${i.name}" style="width:20px;height:20px;vertical-align:middle;" /> ${i.name}</li>`
+    `<li><img src="${i.img}" alt="${foundry.utils.escapeHTML(i.name)}" style="width:20px;height:20px;vertical-align:middle;" /> ${foundry.utils.escapeHTML(i.name)}</li>`
   ).join("");
 
   const qualityDisplay = quality
@@ -29,7 +29,7 @@ export async function openConvertDialog({ actor, activityId, band, quality, inpu
     : `<em>${game.i18n.localize("crucible-tailoring.convert.nothing")}</em>`;
 
   const outputDisplay = outputSpec?.name
-    ? `<div><img src="${outputSpec.img}" alt="${outputSpec.name}" style="width:24px;height:24px;vertical-align:middle;" /> ${outputSpec.name}</div>`
+    ? `<div><img src="${outputSpec.img}" alt="${foundry.utils.escapeHTML(outputSpec.name)}" style="width:24px;height:24px;vertical-align:middle;" /> ${foundry.utils.escapeHTML(outputSpec.name)}</div>`
     : "";
 
   const content = `
@@ -51,20 +51,26 @@ export async function openConvertDialog({ actor, activityId, band, quality, inpu
     </div>
   `;
 
-  const result = await DialogV2.confirm({
-    window: {
-      title: game.i18n.localize("crucible-tailoring.convert.title"),
-      icon: "fa-scissors"
-    },
-    content,
-    yes: {
-      label: game.i18n.localize("crucible-tailoring.convert.approve"),
-      default: true
-    },
-    no: {
-      label: game.i18n.localize("crucible-tailoring.convert.cancel")
-    }
-  });
+  let result;
+  try {
+    result = await DialogV2.confirm({
+      window: {
+        title: game.i18n.localize("crucible-tailoring.convert.title"),
+        icon: "fa-scissors"
+      },
+      content,
+      yes: {
+        label: game.i18n.localize("crucible-tailoring.convert.approve"),
+        default: true
+      },
+      no: {
+        label: game.i18n.localize("crucible-tailoring.convert.cancel")
+      }
+    });
+  } catch (_err) {
+    // DialogV2.confirm may reject on Escape/X dismiss in some v14 builds
+    result = false;
+  }
 
   return result;
 }

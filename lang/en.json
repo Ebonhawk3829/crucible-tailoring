@@ -63,12 +63,16 @@
       "alreadyResolved": "This proposal has already been resolved.",
       "actorNotFound": "Could not resolve the crafting actor.",
       "inputsChanged": "The actor no longer holds the claimed inputs. Inventory may have changed.",
+      "notAnAffix": "The dragged document is not a valid Crucible affix.",
       "confirmed": "Confirmed",
       "success": "Tailoring proposal confirmed and applied."
     },
     "query": {
       "noGM": "No GM available to process tailoring. Try again when a GM is online.",
       "rollTimeout": "The roll request timed out. The player may have disconnected.",
+      "rollCancelled": "The roll was cancelled.",
+      "rollFailed": "The roll completed but produced no result. Please try again.",
+      "insufficientRank": "Your Tailoring training rank is too low for this activity.",
       "proposalPending": "You already have a pending tailoring proposal. Wait for the GM to resolve it.",
       "missingToolkit": "You need a Tailor's Toolkit to perform this activity.",
       "missingPortableWorkbench": "You need a Tailor's Portable Workbench to perform this activity.",

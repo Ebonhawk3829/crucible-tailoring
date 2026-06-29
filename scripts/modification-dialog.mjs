@@ -5,7 +5,27 @@
 import { MODULE_ID, FLAGS } from "./config.mjs";
 
 const { ApplicationV2 } = foundry.applications.api;
-const { getDragEventData } = foundry.applications.ux.TextEditor.implementation;
+
+/**
+ * Resolve drag event data, with a fallback for v14 builds where the import
+ * path may differ.
+ * @param {DragEvent} event
+ * @returns {object|null}
+ */
+function getDragEventData(event) {
+  try {
+    const impl = foundry.applications.ux.TextEditor.implementation;
+    if (typeof impl?.getDragEventData === "function") return impl.getDragEventData(event);
+  } catch (_e) { /* fall through */ }
+  try {
+    if (typeof TextEditor?.getDragEventData === "function") return TextEditor.getDragEventData(event);
+  } catch (_e) { /* fall through */ }
+  try {
+    const json = event.dataTransfer?.getData("text/plain");
+    if (json) return JSON.parse(json);
+  } catch (_e) { /* fall through */ }
+  return null;
+}
 
 export class ModificationDialog extends ApplicationV2 {
   /** @override */
@@ -106,7 +126,7 @@ export class ModificationDialog extends ApplicationV2 {
   }
 
   /**
-   * Handle confirm — returns the result to the caller.
+   * Handle confirm — resolves the stored promise with the result.
    */
   async _onConfirm() {
     if (!this.selectedAffix) {
@@ -114,12 +134,19 @@ export class ModificationDialog extends ApplicationV2 {
       return;
     }
 
-    // Resolve the result via a custom event or callback
-    this._result = {
+    this._resolve?.({
       sourceItemUuid: this.sourceItem?.uuid,
       affixUuid: this.selectedAffix?.uuid
-    };
+    });
+    this._resolve = null;
     this.close();
+  }
+
+  /** @override */
+  _onClose(options) {
+    super._onClose(options);
+    this._resolve?.(null);  // cancelled path
+    this._resolve = null;
   }
 
   /**
@@ -130,16 +157,10 @@ export class ModificationDialog extends ApplicationV2 {
    * @returns {Promise<{sourceItemUuid: string, affixUuid: string}|null>}
    */
   static async open({ sourceItem, actor }) {
-    const dialog = new this({ sourceItem, actor });
-    await dialog.render(true);
-
-    // Wait for the dialog to close and return the result
     return new Promise(resolve => {
-      Hooks.once("closeApplication", (app) => {
-        if (app === dialog) {
-          resolve(dialog._result ?? null);
-        }
-      });
+      const dialog = new this({ sourceItem, actor });
+      dialog._resolve = resolve;
+      dialog.render(true);
     });
   }
 }

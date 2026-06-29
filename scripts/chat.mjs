@@ -118,24 +118,35 @@ export async function confirmProposal(message) {
 
   if (activityId === "applyModification") {
     // Modification: create an affix-type ActiveEffect on the source item.
-    // Crucible's affix system validates via CrucibleItem.validateJoint and handles
-    // procedural naming, budget (AFFIXABLE), and joint validation automatically.
+    //
+    // Crucible stores affixes as ActiveEffect documents (not Items) in the
+    // "affixes" compendium (type: "ActiveEffect"). The affix document's system
+    // block IS the CrucibleAffixActiveEffect schema (module/models/effect-affix.mjs),
+    // so deep-cloning it onto a new ActiveEffect is schema-correct.
+    //
+    // Crucible validates affix application through _preCreateOperation /
+    // validateJoint and the AFFIXABLE budget on the parent item. If the budget
+    // is exceeded, the createEmbeddedDocuments call will throw.
     const sourceItemUuid = outputSpec?._tailoring?.sourceItemUuid;
     const affixUuid = outputSpec?._tailoring?.affixUuid;
 
     if (sourceItemUuid && affixUuid) {
       const sourceItem = await fromUuid(sourceItemUuid);
-      const affixItem = await fromUuid(affixUuid);
+      const affixDoc = await fromUuid(affixUuid);
 
-      if (sourceItem && sourceItem.parent?.id === actor.id && affixItem) {
-        // Create an affix ActiveEffect on the source item.
-        // Crucible's _preCreateOperation validates the parent's AFFIXABLE budget.
+      if (sourceItem && sourceItem.parent?.id === actor.id && affixDoc) {
+        // Validate the dragged document is actually an affix (ActiveEffect type)
+        if (affixDoc.documentName !== "ActiveEffect" || affixDoc.type !== "affix") {
+          ui.notifications.error(game.i18n.localize("crucible-tailoring.confirm.notAnAffix"));
+          return;
+        }
+
         await sourceItem.createEmbeddedDocuments("ActiveEffect", [{
           type: "affix",
-          name: affixItem.name,
-          img: affixItem.img,
-          origin: affixItem.uuid,
-          system: foundry.utils.deepClone(affixItem.system ?? {}),
+          name: affixDoc.name,
+          img: affixDoc.img,
+          origin: affixDoc.uuid,
+          system: foundry.utils.deepClone(affixDoc.system ?? {}),
           flags: {
             [MODULE_ID]: {
               appliedBy: "tailoring",
@@ -144,7 +155,7 @@ export async function confirmProposal(message) {
           }
         }]);
 
-        console.log(`crucible-tailoring | Applied affix "${affixItem.name}" to "${sourceItem.name}"`);
+        console.log(`crucible-tailoring | Applied affix "${affixDoc.name}" to "${sourceItem.name}"`);
       }
     }
   } else if (outputSpec?.type) {

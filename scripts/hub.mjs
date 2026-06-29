@@ -11,19 +11,46 @@ import {
 } from "./materials.mjs";
 
 const { ApplicationV2, DialogV2 } = foundry.applications.api;
-const { getDragEventData } = foundry.applications.ux.TextEditor.implementation;
+
+/**
+ * Resolve drag event data, with a fallback for v14 builds where the import
+ * path may differ. The documented v14 helper is TextEditor.getDragEventData(event)
+ * in some builds, foundry.applications.ux.TextEditor.implementation.getDragEventData
+ * in others.
+ * @param {DragEvent} event
+ * @returns {object|null}
+ */
+function getDragEventData(event) {
+  try {
+    const impl = foundry.applications.ux.TextEditor.implementation;
+    if (typeof impl?.getDragEventData === "function") return impl.getDragEventData(event);
+  } catch (_e) { /* fall through */ }
+  try {
+    if (typeof TextEditor?.getDragEventData === "function") return TextEditor.getDragEventData(event);
+  } catch (_e) { /* fall through */ }
+  // Last resort: try to parse from dataTransfer directly
+  try {
+    const json = event.dataTransfer?.getData("text/plain");
+    if (json) return JSON.parse(json);
+  } catch (_e) { /* fall through */ }
+  return null;
+}
 
 /**
  * Training rank → display label mapping.
- * Mirrors Crucible's SYSTEM.TALENT.TRAINING_RANKS.
+ * Reads from Crucible's canonical SYSTEM.TALENT.TRAINING_RANKS to avoid drift.
+ * Falls back to hardcoded English labels if the system constant is unavailable.
  */
-const RANK_LABELS = {
-  0: "Untrained",
-  1: "Trained",
-  2: "Proficient",
-  3: "Expert",
-  4: "Master"
-};
+function getRankLabel(rank) {
+  const ranks = SYSTEM?.TALENT?.TRAINING_RANKS;
+  if (ranks) {
+    const entry = Object.values(ranks).find(r => r.rank === rank);
+    if (entry) return game.i18n.localize(entry.label);
+  }
+  // Fallback for environments where SYSTEM.TALENT is not yet available
+  const fallback = { 0: "Untrained", 1: "Trained", 2: "Proficient", 3: "Expert", 4: "Master" };
+  return fallback[rank] ?? "Untrained";
+}
 
 /**
  * Activity definitions for the hub display.
@@ -144,7 +171,7 @@ export class TailoringHub extends ApplicationV2 {
 
     return {
       rank,
-      rankLabel: RANK_LABELS[rank] ?? "Untrained",
+      rankLabel: getRankLabel(rank),
       bonus: bonus >= 0 ? `+${bonus}` : `${bonus}`,
       activities,
       materials: materials.map(m => ({
@@ -416,7 +443,7 @@ export class TailoringHub extends ApplicationV2 {
    */
   async _selectPartyMembers() {
     const party = game.actors?.filter(a =>
-      a.type === "character" && a.hasPlayerOwner
+      a.type === "hero" && a.hasPlayerOwner
     ) ?? [];
 
     const content = `
@@ -521,6 +548,9 @@ export class TailoringHub extends ApplicationV2 {
    * @returns {Promise<Item|null>}
    */
   async _selectSourceItem() {
+    // Tailoring applies to cloth-based equipment: armor of unarmored/light/medium
+    // categories, plus clothing-type accessories. Accessories of jewelry/trinket/other
+    // types won't match because their category won't be in this list.
     const eligibleItems = this.actor?.items.filter(i =>
       ["armor", "accessory"].includes(i.type) &&
       ["unarmored", "light", "medium", "clothing"].includes(i.system?.category ?? "")

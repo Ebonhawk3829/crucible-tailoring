@@ -6,28 +6,15 @@ import { MODULE_ID, registerSettings } from "./config.mjs";
 import { checkCanOpenHub } from "./gating.mjs";
 
 /**
- * Find and delete all Mend boon ActiveEffects from an actor.
- * Called when a rest completes to clear "until next rest" effects.
- * @param {Actor} actor
- */
-async function clearMendBoons(actor) {
-  if (!actor) return;
-  const effects = actor.effects?.filter(e =>
-    e.getFlag(MODULE_ID, "useEffect") === "applyMendBoons"
-  ) ?? [];
-  if (effects.length === 0) return;
-  await actor.deleteEmbeddedDocuments("ActiveEffect", effects.map(e => e.id));
-  console.log(`crucible-tailoring | Cleared ${effects.length} Mend boon(s) from ${actor.name}`);
-}
-
-/**
  * Register the Mend consumable's postActivate hook in crucible.api.hooks.
  * Uses the stable identifier "mendConsumable0000" set on the consumable at creation time.
  *
  * Crucible's action lifecycle: postActivate fires after all rolls are complete and
  * effect events have been recorded. This is the documented place to inspect and
- * modify the event stream. We record the Mend boon as an effect event so Crucible
- * applies it during confirmation — no direct document writes.
+ * modify the event stream. We record a dummy ActiveEffect as a visual reminder —
+ * no mechanical changes are applied. The player manually removes the effect after
+ * a rest. This avoids the complexity of trying to model boon dice (which are
+ * roll-time modifiers, not persisted actor fields) via ActiveEffect changes.
  *
  * The consumable itself is consumed by Crucible's normal consumable flow
  * (CrucibleConsumableItem.consume decrements uses automatically).
@@ -47,8 +34,11 @@ function registerMendHook() {
 
       const boonSkills = ["deception", "diplomacy", "intimidation", "performance"];
 
-      // Record the Mend boon as an effect event in the action's event stream.
-      // Crucible applies recorded effects during confirmation — no direct writes.
+      // Record a dummy ActiveEffect as a visual reminder only.
+      // Boons are roll-time dice modifiers in Crucible, not persisted actor fields,
+      // so we do NOT write to enchantmentBonus or any other mechanical field.
+      // The player/GM manually applies boon dice during relevant social checks
+      // and removes this effect after a rest.
       this.recordEvent({
         type: "effect",
         target: this.actor,
@@ -56,7 +46,7 @@ function registerMendHook() {
           name: game.i18n.localize("crucible-tailoring.mend.effectName"),
           img: item.img,
           origin: item.uuid,
-          duration: { value: 0, units: "rounds" }, // infinite, cleared by rest hook
+          duration: { value: 0, units: "rounds" }, // infinite, manually cleared
           flags: {
             [MODULE_ID]: {
               useEffect: "applyMendBoons",
@@ -64,11 +54,7 @@ function registerMendHook() {
               boonSkills
             }
           },
-          changes: boonSkills.map(skill => ({
-            key: `system.skills.${skill}.enchantmentBonus`,
-            mode: CONST.ACTIVE_EFFECT_MODES.ADD,
-            value: boonCount
-          }))
+          changes: []  // No mechanical changes — visual reminder only
         }]
       });
     }
@@ -104,24 +90,19 @@ Hooks.once("ready", async () => {
   const { registerChatHook } = await import("./chat.mjs");
   registerChatHook();
 
-  // Register the Mend AE rest-cleanup hook
-  Hooks.on("rest", async (actor, result) => {
-    if (!actor) return;
-    await clearMendBoons(actor);
-  });
-
   // Register the Mend consumable action hook via crucible.api.hooks.
   // Crucible's actor hooks are registered keyed by talent/affix/item ID in
   // crucible.api.hooks.action, NOT via the global Hooks bus. The hook fires
-  // during Phase 2 (postActivate) and records an effect event — no direct
-  // document writes, per Crucible's lifecycle guidance.
+  // during Phase 2 (postActivate) and records a dummy ActiveEffect as a
+  // visual reminder — no mechanical changes, no direct document writes.
+  // The player/GM manually removes the effect after a rest.
   registerMendHook();
 
   // Add a launch button to Crucible actor sheets.
   // Crucible uses ApplicationV2 sheets — use renderActorSheetV2 with native DOM.
   Hooks.on("renderActorSheetV2", (app, element, data) => {
     const actor = app.document;
-    if (!actor || actor.type !== "character") return;
+    if (!actor || actor.type !== "hero") return;
 
     // Only add the button if it doesn't already exist
     if (element.querySelector(".crucible-tailoring-launch")) return;

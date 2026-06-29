@@ -86,11 +86,23 @@ async function handleRequestRoll(payload) {
     return { ok: false, reason: toolCheck.reason };
   }
 
+  // Re-validate training rank GM-side — the query is the authoritative gate.
+  // Journeyman activities require rank 2 (Proficient), novice require rank 1 (Trained).
+  const rank = actor.system?.training?.tailoring ?? 0;
+  const journeymanActivities = ["craftDisguise", "applyModification"];
+  const requiredRank = journeymanActivities.includes(payload.activityId) ? 2 : 1;
+  if (rank < requiredRank) {
+    return { ok: false, reason: "insufficientRank" };
+  }
+
   // Determine DC
   const materialQuality = payload.materialQuality ?? "standard";
   const dc = getActivityDC(payload.activityId, materialQuality);
 
-  // Build the skill check
+  // Build the skill check via Crucible's actor.getSkillCheck().
+  // This method exists in Crucible 0.10.0 at module/documents/actor.mjs and
+  // correctly populates ability, skill, enchantment, boons, and banes from
+  // the actor's prepared data and talent hooks.
   const check = actor.getSkillCheck("tailoring", { dc });
   if (!check) {
     return { ok: false, reason: "checkBuildFailed" };
@@ -106,9 +118,26 @@ async function handleRequestRoll(payload) {
   // The GM awaits the result here — the player sees the dialog, rolls, and
   // the result comes back to the GM, who relays it to the player's craft flow.
   // The outer requestRoll timeout must exceed the inner requestSkillCheck timeout.
+  //
+  // IMPORTANT: check.request({user}) returns a ChatMessage (via
+  // StandardCheck.handle → pool.toMessage), NOT a plain {total} object.
+  // The roll data is at message.rolls[0].total.
   try {
-    const result = await check.request({ user: requestingUser });
-    const total = result?.total ?? 0;
+    const message = await check.request({ user: requestingUser });
+
+    // check.request() returns undefined when the player cancels the roll dialog
+    // (StandardCheck.handle returns nothing when response === null).
+    // Fail loud — don't silently default to 0.
+    if (!message) {
+      return { ok: false, reason: "rollCancelled" };
+    }
+
+    const total = message.rolls?.[0]?.total;
+    if (total === undefined || total === null) {
+      console.warn("crucible-tailoring | requestRoll: roll total is undefined — ChatMessage may have no rolls array");
+      return { ok: false, reason: "rollFailed" };
+    }
+
     const thresholds = { strongSuccess: getStrongSuccessDelta() };
     const { band, quality } = resolveOutcome(total, dc, materialQuality, thresholds);
 
@@ -134,7 +163,7 @@ async function handleProposeOutput(payload) {
   // Check for existing unresolved proposal from the same actor
   const existingProposal = game.messages.find(m =>
     m.getFlag(MODULE_ID, FLAGS.proposal)?.actorUuid === payload.actorUuid
-    && m.getFlag(MODULE_ID, FLAGS.resolved) !== true
+    && m.getFlag(MODULE_ID, FLAGS.proposal)?.resolved !== true
   );
   if (existingProposal) {
     return { ok: false, reason: "proposalAlreadyPending" };
