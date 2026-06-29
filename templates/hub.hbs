@@ -30,7 +30,15 @@
   </section>
 
   <section class="hub-section">
-    <h3>{{localize "crucible-tailoring.hub.materials"}}</h3>
+    <h3>
+      {{localize "crucible-tailoring.hub.materials"}}
+      {{#if materials.length}}
+      <button class="clear-all-btn" data-action="clear-all-materials"
+              title="{{localize "crucible-tailoring.hub.clearAllMaterials"}}">
+        <i class="fas fa-trash-can"></i>
+      </button>
+      {{/if}}
+    </h3>
     <div class="hub-materials">
       {{#if materials.length}}
       <ul class="material-list">
@@ -42,6 +50,9 @@
           <span class="material-qty">x{{quantity}}</span>
           {{/if}}
           <span class="material-quality quality-{{quality}}">{{quality}}</span>
+          <button class="clear-item-btn" data-action="clear-material"
+                  data-material-key="{{materialKey}}"
+                  title="{{localize "crucible-tailoring.hub.clearMaterial"}}">×</button>
         </li>
         {{/each}}
       </ul>
@@ -56,7 +67,15 @@
   </section>
 
   <section class="hub-section">
-    <h3>{{localize "crucible-tailoring.hub.recipes"}}</h3>
+    <h3>
+      {{localize "crucible-tailoring.hub.recipes"}}
+      {{#if recipes.length}}
+      <button class="clear-all-btn" data-action="clear-all-recipes"
+              title="{{localize "crucible-tailoring.hub.clearAllRecipes"}}">
+        <i class="fas fa-trash-can"></i>
+      </button>
+      {{/if}}
+    </h3>
     <div class="hub-recipes">
       {{#if recipes.length}}
       <ul class="recipe-list">
@@ -66,6 +85,9 @@
           <span class="recipe-name">{{name}}</span>
           <span class="recipe-quality quality-{{quality}}">{{quality}}</span>
           <span class="recipe-cost">{{localize "crucible-tailoring.hub.materialsRequired"}}: {{materialsRequired}}</span>
+          <button class="clear-item-btn" data-action="clear-recipe"
+                  data-item-id="{{id}}"
+                  title="{{localize "crucible-tailoring.hub.clearRecipe"}}">×</button>
         </li>
         {{/each}}
       </ul>

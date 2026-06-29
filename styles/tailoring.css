@@ -239,6 +239,43 @@
   opacity: 0.6;
 }
 
+/* --- Clear buttons --- */
+.crucible-tailoring .clear-item-btn {
+  background: none;
+  border: none;
+  color: var(--color-level-error, #c00);
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 0.15rem 0.35rem;
+  cursor: pointer;
+  border-radius: 3px;
+  opacity: 0.5;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.crucible-tailoring .clear-item-btn:hover {
+  opacity: 1;
+  background: rgba(200, 0, 0, 0.1);
+}
+
+.crucible-tailoring .clear-all-btn {
+  background: none;
+  border: 1px solid var(--color-border-light, #ccc);
+  color: var(--color-text-secondary, #666);
+  font-size: 0.7rem;
+  padding: 0.1rem 0.35rem;
+  cursor: pointer;
+  border-radius: 3px;
+  vertical-align: middle;
+  margin-left: 0.4rem;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.crucible-tailoring .clear-all-btn:hover {
+  color: var(--color-level-error, #c00);
+  border-color: var(--color-level-error, #c00);
+}
+
 /* --- Empty state --- */
 .crucible-tailoring .hub-empty {
   font-style: italic;

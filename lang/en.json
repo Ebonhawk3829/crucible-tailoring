@@ -20,7 +20,15 @@
       "materialsRequired": "Materials required",
       "tools": "Tools",
       "noTools": "No tailoring tools seeded.",
-      "requires": "Requires"
+      "requires": "Requires",
+      "clearMaterial": "Remove this material registration",
+      "clearRecipe": "Remove this recipe",
+      "clearAllMaterials": "Clear all material registrations",
+      "clearAllRecipes": "Clear all recipe registrations",
+      "clearAllMaterialsTitle": "Clear All Materials",
+      "clearAllMaterialsConfirm": "This will remove all tailoring material registrations from all items. This cannot be undone.",
+      "clearAllRecipesTitle": "Clear All Recipes",
+      "clearAllRecipesConfirm": "This will remove all tailoring recipe registrations from all items. This cannot be undone."
     },
     "activity": {
       "craftTradeGoods": {

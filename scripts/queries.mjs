@@ -100,10 +100,22 @@ async function handleRequestRoll(payload) {
   const dc = getActivityDC(payload.activityId, materialQuality);
 
   // Build the skill check via Crucible's actor.getSkillCheck().
-  // This method exists in Crucible 0.10.0 at module/documents/actor.mjs and
-  // correctly populates ability, skill, enchantment, boons, and banes from
-  // the actor's prepared data and talent hooks.
-  const check = actor.getSkillCheck("tailoring", { dc });
+  // Tailoring is not a standard skill in SYSTEM.SKILLS, so getSkillCheck does
+  // not compute an ability bonus automatically — ability defaults to 0.
+  // We manually compute (dex + int) / 4 to match Crucible's two-ability pattern.
+  const dex = actor.system?.abilities?.dexterity?.value ?? 0;
+  const int = actor.system?.abilities?.intellect?.value ?? 0;
+  const abilityBonus = Math.round((dex + int) / 4);
+  const skillBonus = actor.getSkillBonus?.(["tailoring"]) ?? 0;
+
+  const check = new crucible.api.dice.StandardCheck({
+    actorId: actor.id,
+    dc,
+    ability: abilityBonus,
+    skill: skillBonus,
+    enchantment: 0,
+    type: "tailoring"
+  });
   if (!check) {
     return { ok: false, reason: "checkBuildFailed" };
   }

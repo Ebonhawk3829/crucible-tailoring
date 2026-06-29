@@ -1,5 +1,5 @@
 // hub.mjs — TailoringHub ApplicationV2 (player-facing, read-only display)
-import { MODULE_ID } from "./config.mjs";
+import { MODULE_ID, FLAGS } from "./config.mjs";
 import { canOpenHub } from "./gating.mjs";
 import {
   getActorMaterials,
@@ -7,7 +7,11 @@ import {
   actorHasTool,
   TOOL_NAMES,
   getRegisteredRecipes,
-  tagItemAsRecipe
+  tagItemAsRecipe,
+  untagRecipe,
+  clearAllRecipes,
+  clearMaterialType,
+  clearAllMaterials
 } from "./materials.mjs";
 
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -102,7 +106,11 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
     classes: ["crucible-tailoring", "hub-window"],
     tag: "div",
     actions: {
-      "activity-click": TailoringHub.#onActivityClick
+      "activity-click": TailoringHub.#onActivityClick,
+      "clear-material": TailoringHub.#onClearMaterial,
+      "clear-all-materials": TailoringHub.#onClearAllMaterials,
+      "clear-recipe": TailoringHub.#onClearRecipe,
+      "clear-all-recipes": TailoringHub.#onClearAllRecipes
     }
   };
 
@@ -138,7 +146,14 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @override */
   async _prepareContext(options) {
     const rank = this.actor?.system?.training?.tailoring ?? 0;
-    const bonus = this.actor?.getSkillBonus?.(["tailoring"]) ?? 0;
+    const trainingBonus = this.actor?.getSkillBonus?.(["tailoring"]) ?? 0;
+    // Compute ability bonus: (dex + int) / 4, matching Crucible's two-ability pattern
+    const dex = this.actor?.system?.abilities?.dexterity?.value ?? 0;
+    const int = this.actor?.system?.abilities?.intellect?.value ?? 0;
+    const abilityBonus = Math.round((dex + int) / 4);
+    const totalBonus = trainingBonus + abilityBonus;
+    const bonus = totalBonus >= 0 ? `+${totalBonus}` : `${totalBonus}`;
+
     const materials = getActorMaterials(this.actor);
 
     // Build activity list with availability gating
@@ -175,14 +190,16 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
     return {
       rank,
       rankLabel: getRankLabel(rank),
-      bonus: bonus >= 0 ? `+${bonus}` : `${bonus}`,
+      bonus,
       activities,
       materials: materials.map(m => ({
         id: m.id,
+        uuid: m.uuid,
+        materialKey: m.system?.identifier || `${m.name}:${m.type}`,
         name: m.name,
         img: m.img,
         quality: m.system?.quality ?? "standard",
-        quantity: m.system?.quantity ?? null
+        quantity: m.quantity
       })),
       tools,
       recipes,
@@ -218,25 +235,92 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Handle clicking an activity card (invoked via actions API).
+   * ApplicationV2 binds `this` to the TailoringHub instance and `target`
+   * is the element with `data-action`. No DOM walk needed.
    * @param {PointerEvent} event
    * @param {HTMLElement} target
    */
   static #onActivityClick(event, target) {
-    const app = event.currentTarget.closest(".app")?.app;
-    if (!(app instanceof TailoringHub)) return;
+    // `this` is the TailoringHub instance; `target` is the [data-action] element
     const activityId = target.dataset.activity;
     if (!activityId) return;
 
     // Re-check availability — the actions API fires for all cards including locked ones
     const def = ACTIVITIES.find(a => a.id === activityId);
     if (!def) return;
-    const rank = app.actor?.system?.training?.tailoring ?? 0;
+    const rank = this.actor?.system?.training?.tailoring ?? 0;
     if (rank < def.requiredTier) {
       ui.notifications.warn(game.i18n.localize("crucible-tailoring.query.insufficientRank"));
       return;
     }
 
-    app.#runActivityFlow(activityId);
+    this.#runActivityFlow(activityId);
+  }
+
+  /**
+   * Handle clicking the clear button on a single material.
+   * Clears the material type registration (all stacks matching the key).
+   * @param {PointerEvent} event
+   * @param {HTMLElement} target
+   */
+  static async #onClearMaterial(event, target) {
+    const materialKey = target.dataset.materialKey;
+    if (!materialKey) return;
+    await clearMaterialType(materialKey);
+    this.render();
+  }
+
+  /**
+   * Handle clicking "Clear All Materials".
+   * @param {PointerEvent} event
+   * @param {HTMLElement} target
+   */
+  static async #onClearAllMaterials(event, target) {
+    const confirmed = await foundry.applications.api.DialogV2.confirm({
+      window: {
+        title: game.i18n.localize("crucible-tailoring.hub.clearAllMaterialsTitle"),
+        icon: "fa-triangle-exclamation"
+      },
+      content: `<p>${game.i18n.localize("crucible-tailoring.hub.clearAllMaterialsConfirm")}</p>`,
+      modal: true
+    });
+    if (!confirmed) return;
+    await clearAllMaterials();
+    this.render();
+  }
+
+  /**
+   * Handle clicking the clear button on a single recipe.
+   * Removes recipeTag, keeps compendiumKey.
+   * @param {PointerEvent} event
+   * @param {HTMLElement} target
+   */
+  static async #onClearRecipe(event, target) {
+    const itemId = target.dataset.itemId;
+    if (!itemId) return;
+    const item = game.items.get(itemId);
+    if (!item) return;
+    await untagRecipe(item);
+    this.render();
+  }
+
+  /**
+   * Handle clicking "Clear All Recipes".
+   * @param {PointerEvent} event
+   * @param {HTMLElement} target
+   */
+  static async #onClearAllRecipes(event, target) {
+    const confirmed = await foundry.applications.api.DialogV2.confirm({
+      window: {
+        title: game.i18n.localize("crucible-tailoring.hub.clearAllRecipesTitle"),
+        icon: "fa-triangle-exclamation"
+      },
+      content: `<p>${game.i18n.localize("crucible-tailoring.hub.clearAllRecipesConfirm")}</p>`,
+      modal: true
+    });
+    if (!confirmed) return;
+    await clearAllRecipes();
+    this.render();
   }
 
   /**
@@ -349,7 +433,7 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
 
     const options = materials.map(m => ({
       value: m.id,
-      label: `${m.name} (${m.system?.quality ?? "standard"})${m.system?.quantity > 1 ? ` x${m.system.quantity}` : ""}`,
+      label: `${m.name} (${m.system?.quality ?? "standard"})${m.quantity > 1 ? ` x${m.quantity}` : ""}`,
       img: m.img
     }));
 

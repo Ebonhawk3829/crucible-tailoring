@@ -4,6 +4,47 @@ import { MODULE_ID, FLAGS, QUALITY_TIERS, getMaterialsPerCopper } from "./config
 // Cache the loaded seed data so we only fetch once.
 let _seedData = null;
 
+// World-level registry of registered material identifiers.
+// Key: system.identifier (fallback: name:type). Value: { representative: Item }.
+let _materialRegistry = null;
+
+/**
+ * Build (or rebuild) the world-level material type registry.
+ * Scans all world items with the materialTag flag and groups by identifier.
+ * Call once during init and after any clear/reimport that mutates tags.
+ * @returns {Map<string, {representative: Item}>}
+ */
+function buildMaterialRegistry() {
+  const registry = new Map();
+  for (const item of game.items) {
+    if (!isMaterialTagged(item)) continue;
+    const key = _materialTypeKey(item);
+    if (!registry.has(key)) registry.set(key, { representative: item });
+  }
+  _materialRegistry = registry;
+  return registry;
+}
+
+/**
+ * Get the material type key for an item — identifier-first, name+type fallback.
+ * @param {Item} item
+ * @returns {string}
+ */
+function _materialTypeKey(item) {
+  return item.system?.identifier || `${item.name}:${item.type}`;
+}
+
+/** @returns {Map<string, {representative: Item}>} */
+function getMaterialRegistry() {
+  if (!_materialRegistry) buildMaterialRegistry();
+  return _materialRegistry;
+}
+
+/** Invalidate the registry so it rebuilds on next access. */
+function invalidateMaterialRegistry() {
+  _materialRegistry = null;
+}
+
 /**
  * Load the seed JSON from data/tailoring-materials.json.
  * Cached — only fetches once per session.
@@ -256,11 +297,56 @@ export async function ensureSeedItems() {
 /**
  * Tag an item as tailoring-relevant by setting the material tag flag.
  * Used by the drag-from-compendium import panel.
+ * Also registers it in the material type registry.
  * @param {Item} item - The item document to tag
  * @returns {Promise<void>}
  */
 export async function tagItemAsMaterial(item) {
   await item.setFlag(MODULE_ID, FLAGS.materialTag, true);
+  invalidateMaterialRegistry();
+}
+
+/**
+ * Remove the material tag from an item. Also invalidates the registry.
+ * @param {Item} item
+ * @returns {Promise<void>}
+ */
+export async function untagMaterial(item) {
+  await item.setFlag(MODULE_ID, FLAGS.materialTag, false);
+  invalidateMaterialRegistry();
+}
+
+/**
+ * Clear ALL material-tagged stacks matching a given type key from the world.
+ * Untags every world item whose identifier or name+type matches.
+ * @param {string} key - The material type key (identifier or name:type)
+ * @returns {Promise<void>}
+ */
+export async function clearMaterialType(key) {
+  const registry = getMaterialRegistry();
+  const entry = registry.get(key);
+  if (!entry) return;
+  // Find all world items that match this type key
+  for (const item of game.items) {
+    if (!isMaterialTagged(item)) continue;
+    if (_materialTypeKey(item) === key) {
+      await item.setFlag(MODULE_ID, FLAGS.materialTag, false);
+    }
+  }
+  invalidateMaterialRegistry();
+}
+
+/**
+ * Clear all material tags from all items in the world.
+ * @returns {Promise<void>}
+ */
+export async function clearAllMaterials() {
+  for (const item of game.items) {
+    if (isMaterialTagged(item)) {
+      await item.setFlag(MODULE_ID, FLAGS.materialTag, false);
+    }
+  }
+  invalidateMaterialRegistry();
 }
 
 /**
@@ -273,13 +359,36 @@ export function isMaterialTagged(item) {
 }
 
 /**
- * Get all tailoring-tagged materials from an actor's inventory.
+ * Get all tailoring materials aggregated from an actor's inventory by material type.
+ * Groups stacks by system.identifier (or name+type fallback), sums quantities.
+ * Returns view-model objects with aggregated count, plus the representative
+ * item's uuid for the craft flow.
  * @param {Actor} actor
- * @returns {Item[]}
+ * @returns {Array<{id: string, uuid: string, name: string, img: string, type: string, system: object, quantity: number}>}
  */
 export function getActorMaterials(actor) {
   if (!actor) return [];
-  return actor.items.filter(item => isMaterialTagged(item));
+  const registry = getMaterialRegistry();
+  // Group actor-owned items by material type key
+  const groups = new Map();
+  for (const item of actor.items) {
+    if (!isMaterialTagged(item)) continue;
+    const key = _materialTypeKey(item);
+    if (!registry.has(key)) continue; // not a registered material type
+    if (!groups.has(key)) {
+      groups.set(key, { representative: item, total: 0 });
+    }
+    groups.get(key).total += item.system?.quantity ?? 1;
+  }
+  return Array.from(groups.values()).map(({ representative, total }) => ({
+    id: representative.id,
+    uuid: representative.uuid,
+    name: representative.name,
+    img: representative.img,
+    type: representative.type,
+    system: representative.system,
+    quantity: total
+  }));
 }
 
 /**
@@ -290,6 +399,28 @@ export function getActorMaterials(actor) {
  */
 export async function tagItemAsRecipe(item) {
   await item.setFlag(MODULE_ID, FLAGS.recipeTag, true);
+}
+
+/**
+ * Remove the recipe tag from an item. Leaves compendiumKey intact
+ * so ensureSeedItems doesn't re-process it as new.
+ * @param {Item} item
+ * @returns {Promise<void>}
+ */
+export async function untagRecipe(item) {
+  await item.setFlag(MODULE_ID, FLAGS.recipeTag, false);
+}
+
+/**
+ * Clear recipe tags from ALL world items. Leaves compendiumKey intact.
+ * @returns {Promise<void>}
+ */
+export async function clearAllRecipes() {
+  for (const item of game.items) {
+    if (isRecipeTagged(item)) {
+      await item.setFlag(MODULE_ID, FLAGS.recipeTag, false);
+    }
+  }
 }
 
 /**
