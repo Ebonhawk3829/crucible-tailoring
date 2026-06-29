@@ -102,9 +102,7 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
     classes: ["crucible-tailoring", "hub-window"],
     tag: "div",
     actions: {
-      "activity-click": TailoringHub.#onActivityClick,
-      "recipe-drop": TailoringHub.#onRecipeDrop,
-      "import-material": TailoringHub.#onMaterialImportDrop
+      "activity-click": TailoringHub.#onActivityClick
     }
   };
 
@@ -196,11 +194,26 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
   _onRender(context, options) {
     super._onRender(context, options);
 
-    // Prevent default on drag-over for drop zones (actions API handles the drop event)
+    // The actions API only handles click/contextmenu — drop events must be
+    // wired manually. Bind drop + dragover for both drop zones.
     const dropZones = this.element.querySelectorAll("[data-action='recipe-drop'], [data-action='import-material']");
     for (const zone of dropZones) {
+      zone.addEventListener("drop", (e) => this.constructor.#handleDropEvent(e, this));
       zone.addEventListener("dragover", (e) => e.preventDefault());
     }
+  }
+
+  /**
+   * Shared drop handler for recipe and material import zones.
+   * Routes to the correct private method based on data-action.
+   * @param {DragEvent} event
+   * @param {TailoringHub} app
+   */
+  static #handleDropEvent(event, app) {
+    event.preventDefault();
+    const action = event.currentTarget.dataset.action;
+    if (action === "recipe-drop") app.#handleRecipeDrop(event);
+    else if (action === "import-material") app.#handleMaterialImportDrop(event);
   }
 
   /**
@@ -211,30 +224,19 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
   static #onActivityClick(event, target) {
     const app = event.currentTarget.closest(".app")?.app;
     if (!(app instanceof TailoringHub)) return;
-    // Navigate up to the card to get the activity id, since the click may land on a child element
-    const card = target.closest("[data-activity]");
-    const activityId = card?.dataset?.activity;
-    if (activityId) app.#runActivityFlow(activityId);
-  }
+    const activityId = target.dataset.activity;
+    if (!activityId) return;
 
-  /**
-   * Handle dropping an item into the recipe box (invoked via actions API).
-   * @param {DragEvent} event
-   */
-  static #onRecipeDrop(event) {
-    const app = event.currentTarget.closest(".app")?.app;
-    if (!(app instanceof TailoringHub)) return;
-    app.#handleRecipeDrop(event);
-  }
+    // Re-check availability — the actions API fires for all cards including locked ones
+    const def = ACTIVITIES.find(a => a.id === activityId);
+    if (!def) return;
+    const rank = app.actor?.system?.training?.tailoring ?? 0;
+    if (rank < def.requiredTier) {
+      ui.notifications.warn(game.i18n.localize("crucible-tailoring.query.insufficientRank"));
+      return;
+    }
 
-  /**
-   * Handle dropping an item into the material import zone (invoked via actions API).
-   * @param {DragEvent} event
-   */
-  static #onMaterialImportDrop(event) {
-    const app = event.currentTarget.closest(".app")?.app;
-    if (!(app instanceof TailoringHub)) return;
-    app.#handleMaterialImportDrop(event);
+    app.#runActivityFlow(activityId);
   }
 
   /**
