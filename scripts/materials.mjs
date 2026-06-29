@@ -25,13 +25,6 @@ export async function loadSeedData() {
 function collectCreatableEntries(seed) {
   const results = [];
 
-  // Tools (create)
-  for (const entry of seed.tools || []) {
-    if (entry.system && entry._tailoring?.seedAction === "create") {
-      results.push({ entry, category: "tools" });
-    }
-  }
-
   // Trade goods (create)
   for (const entry of seed.tradeGoods || []) {
     if (entry.system && entry._tailoring?.seedAction === "create") {
