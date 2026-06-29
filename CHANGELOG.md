@@ -5,11 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.5-dev] — Prerelease
+
+### Fixed
+- Drop zones (recipe import, material import) no longer silently break after actions-API refactor — the actions API cannot wire drop events; restored manual `addEventListener` for both `drop` and `dragover`
+- Locked (unavailable) activity cards now show a warning instead of silently failing — the actions API fires for all cards regardless of their CSS class; added rank re-validation inside the click handler
+
 ## [0.2.4-dev] — Prerelease
 
 ### Fixed
 - Hub now uses `HandlebarsApplicationMixin` — resolves "not renderable" error on open
-- Activity cards and drop zones now use the v14 actions API — prevents duplicate event listeners on re-render
+- Activity cards use the v14 actions API with rank re-validation in the handler — prevents duplicate event listeners on re-render
+- Drop zones (recipe import, material import) reverted to manual `addEventListener` with both `drop` and `dragover` — the actions API cannot wire drop events, so the earlier refactor silently broke drag-and-drop
+- Locked (unavailable) activity cards now show a warning instead of silently failing — the actions API fires for all cards regardless of their CSS class
 - Seed data loading now handles network errors gracefully instead of crashing module init
 - Added error handling around seed item creation in the ready hook
 
