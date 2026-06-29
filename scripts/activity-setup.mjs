@@ -134,7 +134,7 @@ export const ACTIVITY_DEFS = {
         name: "Mended Presentation",
         img: "icons/commodities/cloth/cloth-thread-needle.webp",
         system: {
-          category: "consumable",
+          category: "other",
           quality: quality ?? "standard",
           price: 0,
           weight: 0,
