@@ -8,7 +8,8 @@ import {
   getSeedEntriesByRole
 } from "./materials.mjs";
 
-const { ApplicationV2 } = foundry.applications.api;
+const { ApplicationV2, DialogV2 } = foundry.applications.api;
+const { getDragEventData } = foundry.applications.ux.TextEditor.implementation;
 
 /**
  * Training rank → display label mapping.
@@ -277,6 +278,9 @@ export class TailoringHub extends ApplicationV2 {
 
   /**
    * Open a dialog for the player to select materials from their inventory.
+   * Uses DialogV2.wait() with a button callback to capture form state
+   * before the dialog closes (avoids the document.querySelectorAll race).
+   *
    * @param {Item[]} materials - Available tailoring-tagged materials
    * @param {number} minCount - Minimum number to select
    * @param {number} maxCount - Maximum number to select
@@ -285,7 +289,6 @@ export class TailoringHub extends ApplicationV2 {
   async _selectMaterials(materials, minCount, maxCount) {
     if (materials.length === 0) return null;
 
-    // Build a simple selection dialog
     const options = materials.map(m => ({
       value: m.id,
       label: `${m.name} (${m.system?.quality ?? "standard"})${m.system?.quantity > 1 ? ` x${m.system.quantity}` : ""}`,
@@ -308,21 +311,28 @@ export class TailoringHub extends ApplicationV2 {
       </div>
     `;
 
-    const { DialogV2 } = foundry.applications.api;
-    const confirmed = await DialogV2.confirm({
+    // Capture form state inside the button callback, before the dialog closes
+    let checkedIds = [];
+    const result = await DialogV2.wait({
       window: { title: game.i18n.localize("crucible-tailoring.flow.selectMaterialsTitle"), icon: "fa-boxes" },
       content,
-      yes: { label: game.i18n.localize("crucible-tailoring.flow.confirm"), default: true },
-      no: { label: game.i18n.localize("crucible-tailoring.flow.cancel") }
+      buttons: [{
+        action: "ok",
+        label: game.i18n.localize("crucible-tailoring.flow.confirm"),
+        default: true,
+        callback: (event, button, dialog) => {
+          checkedIds = [];
+          dialog.element.querySelectorAll(".material-checkbox:checked").forEach(cb => checkedIds.push(cb.value));
+        }
+      }, {
+        action: "cancel",
+        label: game.i18n.localize("crucible-tailoring.flow.cancel")
+      }]
     });
 
-    if (!confirmed) return null;
+    if (result !== "ok") return null;
 
-    // Read selected checkboxes from the DOM (DialogV2 doesn't return form data natively)
-    const checkedIds = [];
-    document.querySelectorAll(".material-checkbox:checked").forEach(cb => checkedIds.push(cb.value));
     const selected = materials.filter(m => checkedIds.includes(m.id));
-
     if (selected.length < minCount || selected.length > maxCount) {
       ui.notifications.warn(game.i18n.format("crucible-tailoring.flow.materialCount", { min: minCount, max: maxCount }));
       return null;
@@ -360,20 +370,27 @@ export class TailoringHub extends ApplicationV2 {
       </div>
     `;
 
-    const { DialogV2 } = foundry.applications.api;
-    const confirmed = await DialogV2.confirm({
+    // Capture form state inside the button callback, before the dialog closes
+    let selectedKey = null;
+    const result = await DialogV2.wait({
       window: { title: game.i18n.localize("crucible-tailoring.flow.selectOutputTitle"), icon: "fa-hammer" },
       content,
-      yes: { label: game.i18n.localize("crucible-tailoring.flow.confirm"), default: true },
-      no: { label: game.i18n.localize("crucible-tailoring.flow.cancel") }
+      buttons: [{
+        action: "ok",
+        label: game.i18n.localize("crucible-tailoring.flow.confirm"),
+        default: true,
+        callback: (event, button, dialog) => {
+          const radio = dialog.element.querySelector("input[name='outputItem']:checked");
+          selectedKey = radio?.value ?? null;
+        }
+      }, {
+        action: "cancel",
+        label: game.i18n.localize("crucible-tailoring.flow.cancel")
+      }]
     });
 
-    if (!confirmed) return null;
+    if (result !== "ok" || !selectedKey) return null;
 
-    const selectedRadio = document.querySelector("input[name='outputItem']:checked");
-    if (!selectedRadio) return null;
-
-    const selectedKey = selectedRadio.value;
     const selected = outputs.find(o => (o._tailoring?.compendiumKey ?? o.name) === selectedKey);
     if (!selected) return null;
 
@@ -408,18 +425,27 @@ export class TailoringHub extends ApplicationV2 {
       </div>
     `;
 
-    const { DialogV2 } = foundry.applications.api;
-    const confirmed = await DialogV2.confirm({
+    // Capture form state inside the button callback, before the dialog closes
+    let checkedUuids = [];
+    const result = await DialogV2.wait({
       window: { title: game.i18n.localize("crucible-tailoring.flow.selectPartyMembersTitle"), icon: "fa-users" },
       content,
-      yes: { label: game.i18n.localize("crucible-tailoring.flow.confirm"), default: true },
-      no: { label: game.i18n.localize("crucible-tailoring.flow.cancel") }
+      buttons: [{
+        action: "ok",
+        label: game.i18n.localize("crucible-tailoring.flow.confirm"),
+        default: true,
+        callback: (event, button, dialog) => {
+          checkedUuids = [];
+          dialog.element.querySelectorAll(".party-checkbox:checked").forEach(cb => checkedUuids.push(cb.value));
+        }
+      }, {
+        action: "cancel",
+        label: game.i18n.localize("crucible-tailoring.flow.cancel")
+      }]
     });
 
-    if (!confirmed) return null;
+    if (result !== "ok") return null;
 
-    const checkedUuids = [];
-    document.querySelectorAll(".party-checkbox:checked").forEach(cb => checkedUuids.push(cb.value));
     const members = [];
     for (const uuid of checkedUuids) {
       const actor = await fromUuid(uuid);
@@ -454,22 +480,31 @@ export class TailoringHub extends ApplicationV2 {
       </div>
     `;
 
-    const { DialogV2 } = foundry.applications.api;
-    const confirmed = await DialogV2.confirm({
+    // Capture form state inside the button callback, before the dialog closes
+    let disguiseType = "social";
+    let context = "";
+    const result = await DialogV2.wait({
       window: { title: game.i18n.localize("crucible-tailoring.flow.selectDisguiseTitle"), icon: "fa-mask" },
       content,
-      yes: { label: game.i18n.localize("crucible-tailoring.flow.confirm"), default: true },
-      no: { label: game.i18n.localize("crucible-tailoring.flow.cancel") }
+      buttons: [{
+        action: "ok",
+        label: game.i18n.localize("crucible-tailoring.flow.confirm"),
+        default: true,
+        callback: (event, button, dialog) => {
+          const typeRadio = dialog.element.querySelector("input[name='disguiseType']:checked");
+          const contextInput = dialog.element.querySelector("input[name='disguiseContext']");
+          disguiseType = typeRadio?.value ?? "social";
+          context = contextInput?.value?.trim() ?? "";
+        }
+      }, {
+        action: "cancel",
+        label: game.i18n.localize("crucible-tailoring.flow.cancel")
+      }]
     });
 
-    if (!confirmed) return null;
+    if (result !== "ok") return null;
 
-    const typeRadio = document.querySelector("input[name='disguiseType']:checked");
-    const contextInput = document.querySelector("input[name='disguiseContext']");
-    return {
-      disguiseType: typeRadio?.value ?? "social",
-      context: contextInput?.value?.trim() ?? ""
-    };
+    return { disguiseType, context };
   }
 
   /**
@@ -502,19 +537,28 @@ export class TailoringHub extends ApplicationV2 {
       </div>
     `;
 
-    const { DialogV2 } = foundry.applications.api;
-    const confirmed = await DialogV2.confirm({
+    // Capture form state inside the button callback, before the dialog closes
+    let selectedId = null;
+    const result = await DialogV2.wait({
       window: { title: game.i18n.localize("crucible-tailoring.flow.selectSourceItemTitle"), icon: "fa-wrench" },
       content,
-      yes: { label: game.i18n.localize("crucible-tailoring.flow.confirm"), default: true },
-      no: { label: game.i18n.localize("crucible-tailoring.flow.cancel") }
+      buttons: [{
+        action: "ok",
+        label: game.i18n.localize("crucible-tailoring.flow.confirm"),
+        default: true,
+        callback: (event, button, dialog) => {
+          const radio = dialog.element.querySelector("input[name='sourceItem']:checked");
+          selectedId = radio?.value ?? null;
+        }
+      }, {
+        action: "cancel",
+        label: game.i18n.localize("crucible-tailoring.flow.cancel")
+      }]
     });
 
-    if (!confirmed) return null;
+    if (result !== "ok" || !selectedId) return null;
 
-    const selectedRadio = document.querySelector("input[name='sourceItem']:checked");
-    if (!selectedRadio) return null;
-    return this.actor.items.get(selectedRadio.value) ?? null;
+    return this.actor.items.get(selectedId) ?? null;
   }
 
   /**
@@ -524,7 +568,7 @@ export class TailoringHub extends ApplicationV2 {
    */
   async _onRecipeDrop(event) {
     event.preventDefault();
-    const data = TextEditor.getDragEventData(event);
+    const data = getDragEventData(event);
     if (!data?.uuid) return;
 
     const item = await fromUuid(data.uuid);
@@ -547,7 +591,7 @@ export class TailoringHub extends ApplicationV2 {
    */
   async _onMaterialImportDrop(event) {
     event.preventDefault();
-    const data = TextEditor.getDragEventData(event);
+    const data = getDragEventData(event);
     if (!data?.uuid) return;
 
     const item = await fromUuid(data.uuid);

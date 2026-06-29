@@ -1,5 +1,4 @@
 {
-  "$schema": "crucible-tailoring/seed.v1",
   "_meta": {
     "description": "Seed list of tailoring-relevant items for the Crucible Tailoring module. Entries with a populated `system` block are created in-world via Item.create() at init if no existing world item carries a matching _tailoring.compendiumKey flag. Raw textile materials are intentionally NOT seeded — they are added at runtime via the module's drag-from-compendium import panel.",
     "identityKey": "_tailoring.compendiumKey is the canonical identity key. ensureSeedItems() checks for an existing world item with a matching flag; if none exists, creates from the seed entry.",

@@ -3,6 +3,8 @@
 
 import { MODULE_ID, FLAGS, QUALITY_TIERS } from "./config.mjs";
 
+const { renderTemplate } = foundry.applications.handlebars;
+
 /**
  * Post a proposal chat card flagged in the module namespace.
  * The card has a GM-only confirm button.
@@ -94,22 +96,19 @@ export async function confirmProposal(message) {
   }
 
   // --- THE WRITE ---
-  // Consume inputs with stackable guard
+  // Consume inputs using Crucible's built-in consume() for proper stackable handling
   for (const item of inputItems) {
-    const isStackable = item.system?.properties?.includes?.("stackable") ?? false;
-    const quantity = Number(item.system?.quantity) || 1;
-
-    if (isStackable && quantity > 1) {
-      // Decrement quantity; only delete if it reaches 0
-      const newQty = quantity - 1;
-      if (newQty <= 0) {
-        await actor.deleteEmbeddedDocuments("Item", [item.id]);
-      } else {
-        await item.update({ "system.quantity": newQty });
-      }
+    if (typeof item.system?.consume === "function") {
+      await item.system.consume(1, { save: true });
     } else {
-      // Non-stackable or single unit — delete outright
-      await actor.deleteEmbeddedDocuments("Item", [item.id]);
+      // Fallback for items without Crucible's consume (e.g. non-physical items)
+      const isStackable = item.system?.properties?.includes?.("stackable") ?? false;
+      const quantity = Number(item.system?.quantity) || 1;
+      if (isStackable && quantity > 1) {
+        await item.update({ "system.quantity": quantity - 1 });
+      } else {
+        await actor.deleteEmbeddedDocuments("Item", [item.id]);
+      }
     }
   }
 
@@ -118,8 +117,9 @@ export async function confirmProposal(message) {
   const activityId = proposal.activityId;
 
   if (activityId === "applyModification") {
-    // Modification: apply the affix to the existing source item.
-    // The source item stays on the actor; we add the affix to it.
+    // Modification: create an affix-type ActiveEffect on the source item.
+    // Crucible's affix system validates via CrucibleItem.validateJoint and handles
+    // procedural naming, budget (AFFIXABLE), and joint validation automatically.
     const sourceItemUuid = outputSpec?._tailoring?.sourceItemUuid;
     const affixUuid = outputSpec?._tailoring?.affixUuid;
 
@@ -128,19 +128,21 @@ export async function confirmProposal(message) {
       const affixItem = await fromUuid(affixUuid);
 
       if (sourceItem && sourceItem.parent?.id === actor.id && affixItem) {
-        // Apply the affix to the source item using Crucible's affix system.
-        // The affix occupies an affix slot on the item.
-        // We store the affix reference as a flag and let Crucible handle the rest.
-        const existingAffixes = sourceItem.getFlag(MODULE_ID, "appliedAffixes") ?? [];
-        existingAffixes.push({
-          affixUuid: affixItem.uuid,
-          affixName: affixItem.name,
-          appliedAt: Date.now()
-        });
-        await sourceItem.setFlag(MODULE_ID, "appliedAffixes", existingAffixes);
-
-        // Also set a flag indicating this item has tailoring modifications
-        await sourceItem.setFlag(MODULE_ID, "hasModifications", true);
+        // Create an affix ActiveEffect on the source item.
+        // Crucible's _preCreateOperation validates the parent's AFFIXABLE budget.
+        await sourceItem.createEmbeddedDocuments("ActiveEffect", [{
+          type: "affix",
+          name: affixItem.name,
+          img: affixItem.img,
+          origin: affixItem.uuid,
+          system: foundry.utils.deepClone(affixItem.system ?? {}),
+          flags: {
+            [MODULE_ID]: {
+              appliedBy: "tailoring",
+              appliedAt: Date.now()
+            }
+          }
+        }]);
 
         console.log(`crucible-tailoring | Applied affix "${affixItem.name}" to "${sourceItem.name}"`);
       }
@@ -200,20 +202,21 @@ export async function confirmProposal(message) {
 
 /**
  * Register the chat message hook that binds the confirm button.
+ * Uses renderChatMessageHTML (v14) which passes a native HTMLElement.
  * Called from main.mjs ready hook.
  */
 export function registerChatHook() {
-  Hooks.on("renderChatMessage", (message, html, data) => {
+  Hooks.on("renderChatMessageHTML", (message, html, messageData) => {
     const proposal = message.getFlag(MODULE_ID, FLAGS.proposal);
     if (!proposal || proposal.resolved) return;
 
     // Only show confirm button to GM
     if (!game.user.isGM) return;
 
-    const confirmBtn = html.find(".crucible-tailoring-confirm");
-    if (confirmBtn.length === 0) return;
+    const confirmBtn = html.querySelector(".crucible-tailoring-confirm");
+    if (!confirmBtn) return;
 
-    confirmBtn.on("click", async () => {
+    confirmBtn.addEventListener("click", async () => {
       await confirmProposal(message);
     });
   });

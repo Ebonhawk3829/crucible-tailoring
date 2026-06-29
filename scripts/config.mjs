@@ -40,7 +40,9 @@ export const FLAGS = {
 
 // Timeout constants (milliseconds)
 export const TIMEOUTS = {
-  requestRoll: 120_000,   // 2 minutes — generous for player to complete roll dialog
+  requestRoll: 300_000,   // 5 minutes — must exceed Crucible's requestSkillCheck timeout
+                          // since the GM handler awaits check.request({user}) which
+                          // suspends for the duration of the player's roll dialog.
   proposeOutput: 600_000  // 10 minutes — generous for GM to review and confirm
 };
 

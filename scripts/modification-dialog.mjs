@@ -5,6 +5,7 @@
 import { MODULE_ID, FLAGS } from "./config.mjs";
 
 const { ApplicationV2 } = foundry.applications.api;
+const { getDragEventData } = foundry.applications.ux.TextEditor.implementation;
 
 export class ModificationDialog extends ApplicationV2 {
   /** @override */
@@ -92,7 +93,7 @@ export class ModificationDialog extends ApplicationV2 {
    */
   async _onAffixDrop(event) {
     event.preventDefault();
-    const data = TextEditor.getDragEventData(event);
+    const data = getDragEventData(event);
     if (!data?.uuid) return;
 
     const item = await fromUuid(data.uuid);

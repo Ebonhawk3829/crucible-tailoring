@@ -1,8 +1,6 @@
 // gating.mjs — access control for the Tailoring Hub
 // Rank-based gate: actor must have tailoring training rank >= 1.
 
-import { MODULE_ID } from "./config.mjs";
-
 /**
  * Silent predicate: does the actor qualify to open the Tailoring Hub?
  * @param {Actor} actor

@@ -2,9 +2,8 @@
 // Each activity has different input selection, tool requirements, and output specs.
 // These functions run on the PLAYER's client before the GM pings.
 
-import { MODULE_ID, FLAGS, QUERY_REQUEST_ROLL, QUERY_PROPOSE_OUTPUT, TIMEOUTS, getMaterialDC, getMendDC, getStrongSuccessDelta } from "./config.mjs";
-import { getActorMaterials, actorHasTool, getSeedEntriesByRole, computeMaterialsRequired } from "./materials.mjs";
-import { resolveOutcome } from "./outcome.mjs";
+import { MODULE_ID, FLAGS, getMaterialDC, getMendDC } from "./config.mjs";
+import { actorHasTool } from "./materials.mjs";
 
 /**
  * Activity definition registry.
@@ -152,7 +151,7 @@ export const ACTIVITY_DEFS = {
           producedBy: ["mend"],
           useEffect: "applyMendBoons",
           boonScale,
-          boonSkills: ["diplomacy", "deception", "intimidation", "persuasion", "society"],
+          boonSkills: ["deception", "diplomacy", "intimidation", "performance"],
           duration: "infinite",
           partyMemberUuids: payload.partyMemberUuids ?? []
         }

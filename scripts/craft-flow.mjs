@@ -33,12 +33,13 @@ export async function runCraftFlow({ actor, activityId, selectedMaterials, extra
     return { success: false, reason: "unknownActivity" };
   }
 
-  // 2. Assemble the requestRoll payload
+  // 2. Assemble the requestRoll payload (includes userId for GM→player dispatch)
   const payload = def.assemblePayload(actor, selectedMaterials, extra);
   if (!payload) {
     ui.notifications.warn(game.i18n.localize("crucible-tailoring.flow.invalidPayload"));
     return { success: false, reason: "invalidPayload" };
   }
+  payload.userId = game.user.id;
 
   // 3. Check for GM
   if (!game.users.activeGM) {

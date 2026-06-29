@@ -6,6 +6,19 @@ import { BANDS, QUALITY_TIERS } from "./config.mjs";
 
 /**
  * Resolve a roll total against a DC into one of four success bands.
+ *
+ * Band boundaries (delta = thresholds.strongSuccess):
+ *   total >= dc + delta  → STRONG_SUCCESS  (inclusive at near edge)
+ *   total >= dc          → SUCCESS
+ *   total <= dc - delta  → STRONG_FAILURE  (inclusive at far edge)
+ *   otherwise            → FAILURE
+ *
+ * The bands are intentionally slightly asymmetric at the boundaries:
+ * strong-success is inclusive at the near edge (>= dc+delta), while
+ * strong-failure is inclusive at the far edge (<= dc-delta). This means
+ * a roll exactly at dc+delta is a strong success, but a roll exactly at
+ * dc-delta is a strong failure — the "strong" bands each claim one edge.
+ *
  * @param {number} total - The roll total
  * @param {number} dc - The difficulty class
  * @param {{strongSuccess: number}} thresholds - e.g. {strongSuccess: 8}

@@ -62,8 +62,11 @@ function getActivityDC(activityId, materialQuality) {
 /**
  * Handler for crucible-tailoring.requestRoll
  *
- * Payload: { actorUuid, activityId, materialQuality, inputUuids }
+ * Payload: { actorUuid, activityId, materialQuality, inputUuids, userId }
  * Returns: { ok: true, total, band, quality } or { ok: false, reason }
+ *
+ * The GM computes the DC, dispatches the roll dialog to the requesting player
+ * via check.request({user}), and returns the roll result to the player's client.
  */
 async function handleRequestRoll(payload) {
   // Validate payload
@@ -93,10 +96,18 @@ async function handleRequestRoll(payload) {
     return { ok: false, reason: "checkBuildFailed" };
   }
 
-  // Run StandardCheck.request() — the player rolls in their own dialog.
-  // Wrap in try/catch: if the player disconnects, the roll times out.
+  // Resolve the requesting user so we can dispatch the roll dialog to them
+  const requestingUser = payload.userId ? game.users.get(payload.userId) : null;
+  if (!requestingUser) {
+    return { ok: false, reason: "userNotFound" };
+  }
+
+  // Dispatch the roll dialog to the player via Crucible's check.request().
+  // The GM awaits the result here — the player sees the dialog, rolls, and
+  // the result comes back to the GM, who relays it to the player's craft flow.
+  // The outer requestRoll timeout must exceed the inner requestSkillCheck timeout.
   try {
-    const result = await check.request();
+    const result = await check.request({ user: requestingUser });
     const total = result?.total ?? 0;
     const thresholds = { strongSuccess: getStrongSuccessDelta() };
     const { band, quality } = resolveOutcome(total, dc, materialQuality, thresholds);
