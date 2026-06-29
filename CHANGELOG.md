@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1-dev] — Prerelease
+
+### Fixed
+- Hub window now sizes to content by default (`height: "auto"`) instead of a fixed 720px
+- Material import drop now copies compendium/actor items into `game.items` before tagging — the registry scan for `buildMaterialRegistry()` only sees world items, so tagging a compendium document left the registry empty
+- `getActorMaterials` no longer requires per-stack `isMaterialTagged` flag — matching against the material type registry is sufficient; an actor "has" a material when any owned item's identifier matches a registered type
+
 ## [0.3.0-dev] — Prerelease
 
 ### Added

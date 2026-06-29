@@ -369,10 +369,12 @@ export function isMaterialTagged(item) {
 export function getActorMaterials(actor) {
   if (!actor) return [];
   const registry = getMaterialRegistry();
-  // Group actor-owned items by material type key
+  // Group actor-owned items by material type key.
+  // The registry is the sole source of truth — an actor "has" a material
+  // if their item's identifier matches a registered type, without requiring
+  // each individual stack to carry a flag.
   const groups = new Map();
   for (const item of actor.items) {
-    if (!isMaterialTagged(item)) continue;
     const key = _materialTypeKey(item);
     if (!registry.has(key)) continue; // not a registered material type
     if (!groups.has(key)) {

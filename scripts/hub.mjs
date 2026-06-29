@@ -97,7 +97,7 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @override */
   static DEFAULT_OPTIONS = {
     id: `${MODULE_ID}.hub`,
-    position: { width: 640, height: 720 },
+    position: { width: 640, height: "auto" },
     window: {
       title: "crucible-tailoring.hub.title",
       icon: "fa-scissors",
@@ -737,13 +737,21 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
     const data = getDragEventData(event);
     if (!data?.uuid) return;
 
-    const item = await fromUuid(data.uuid);
-    if (!item) return;
+    const source = await fromUuid(data.uuid);
+    if (!source) return;
 
     const { tagItemAsMaterial } = await import("./materials.mjs");
-    await tagItemAsMaterial(item);
+
+    // Ensure a world item exists to carry the material-type registration.
+    // Dragging from a compendium or actor inventory would otherwise tag a
+    // document that buildMaterialRegistry() never sees.
+    let worldItem = source;
+    if (source.pack || source.parent) {
+      worldItem = await Item.create(source.toObject());
+    }
+    await tagItemAsMaterial(worldItem);
     ui.notifications.info(
-      game.i18n.format("crucible-tailoring.hub.materialImported", { name: item.name })
+      game.i18n.format("crucible-tailoring.hub.materialImported", { name: worldItem.name })
     );
     this.render();
   }
