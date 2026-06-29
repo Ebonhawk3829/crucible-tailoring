@@ -3,7 +3,7 @@
   "title": "Crucible Tailoring",
   "description": "Player-driven Tailoring crafting workflow for the Crucible game system. Adds a Tailoring Hub, material import, craft activities (Trade Goods, Equipment, Mend, Disguise, Modification), and a GM-confirmed write pipeline.",
   "authors": [{ "name": "Ebonhawk3829" }],
-  "version": "0.3.0",
+  "version": "0.3.0-dev",
   "compatibility": {
     "minimum": 14,
     "verified": 14

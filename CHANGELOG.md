@@ -5,33 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.0] — 2026-06-29
+## [0.3.0-dev] — Prerelease
 
 ### Added
-- **World-level material type registry** — materials are now registered by `system.identifier` (fallback: `name:type`) rather than per-instance flagging. A single import registers the material type; the hub aggregates quantities across all matching stacks in the actor's inventory.
-- **Ability bonus to tailoring rolls** — the hub and roll handler now compute `(dexterity + intellect) / 4`, matching Crucible's native two-ability skill pattern. Previously, tailoring had no ability bonus (only training rank); now it uses Dex+Int, the same pairing as Reflex saves.
-- **Clear buttons for materials and recipes** — individual `×` buttons on each material and recipe entry, plus "Clear All" buttons with confirmation dialogs. Material clearing untags all stacks of that type; recipe clearing removes only the `recipeTag` flag (preserving `compendiumKey` to prevent re-processing on seed re-run).
-- **`untagRecipe()` and `clearAllRecipes()`** — exported functions to remove recipe registrations without touching identity keys.
-- **`clearMaterialType(key)` and `clearAllMaterials()`** — exported functions matching the new type-registry model.
-- Eight new localization keys for clear-button labels, titles, and confirmations.
+- Materials now registered by item identifier rather than per-instance flag — import a material type once, hub aggregates quantities across all matching stacks in the actor's inventory
+- Ability bonus to tailoring rolls — now uses the standard Crucible two-ability formula (Dex + Int) / 4, same pairing as Reflex saves
+- Clear buttons on each material and recipe entry, plus "Clear All" with confirmation dialog
+- Material clearing untags all stacks of that type; recipe clearing preserves the compendium key to avoid re-processing on seed re-run
 
 ### Changed
-- **`getActorMaterials()` return shape** — now returns view-model objects with `{ id, uuid, materialKey, name, img, type, system, quantity }` where `quantity` is the aggregated total across all stacks of that material type.
-- **Activity click handler** — removed fragile `closest(".app")?.app` DOM walk; uses `this` directly (ApplicationV2 binds it correctly for static action handlers).
-
-### Fixed
-- **Ability bonus display in hub** — bonus now shows the total of training rank + ability contribution, not just training rank.
+- Activity click handler no longer walks the DOM to find the app instance — uses ApplicationV2's built-in `this` binding
+- Hub bonus display now shows combined training rank + ability contribution instead of training rank only
 
 ## [0.2.6-dev] — Prerelease
 
 ### Fixed
-- Material import now infers quality from item name — materials from source modules often embed the quality tier in the name but create everything at default (standard) grade; `tagItemAsMaterial` corrects `system.quality` when a leading quality word is found
-- Trade Goods seed entry now has a `compendiumKey` (`tailoredTradeGo0`) — without it the entry was silently skipped in Phase 1 and never created
+- Material import now infers quality from item name
+- Trade Goods seed entry now has a `compendiumKey` (`tailoredTradeGo0`)
 - Missing `compendiumKey` on create-type seed entries now logs a warning instead of silently skipping
 
 ### Changed
-- Launch button uses `<button type="button">` with `stopPropagation` — single click reliably opens the hub instead of sometimes requiring a double-click
-- Launch button injected into `.header-buttons` when available (Crucible's sheet header container) instead of appending after the title
+- Launch button — single click reliably opens the hub instead of sometimes requiring a double-click
+- Launch button injected into sheet header container instead of appending after the title
 
 ## [0.2.5-dev] — Prerelease
 
