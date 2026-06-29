@@ -186,15 +186,23 @@ export async function confirmProposal(message) {
     }
   }
 
-  // Mark proposal as resolved and update the card in-place
+  // Mark proposal as resolved and update the card in-place.
+  // Idempotent: if the content is already wrapped (e.g. repeated confirm),
+  // don't nest another wrapper.
   const updatedFlags = foundry.utils.deepClone(message.flags);
   updatedFlags[MODULE_ID][FLAGS.proposal].resolved = true;
-  await message.update({
-    flags: updatedFlags,
-    content: `<div class="crucible-tailoring proposal-resolved">
+
+  const alreadyResolved = message.content.includes("proposal-resolved");
+  const newContent = alreadyResolved
+    ? message.content
+    : `<div class="crucible-tailoring proposal-resolved">
       ${message.content}
       <div class="proposal-confirmed-badge">${game.i18n.localize("crucible-tailoring.confirm.confirmed")}</div>
-    </div>`
+    </div>`;
+
+  await message.update({
+    flags: updatedFlags,
+    content: newContent
   });
 
   ui.notifications.info(game.i18n.localize("crucible-tailoring.confirm.success"));

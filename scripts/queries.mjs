@@ -3,7 +3,7 @@
 
 import { MODULE_ID, QUERY_REQUEST_ROLL, QUERY_PROPOSE_OUTPUT, FLAGS, getMaterialDC, getMendDC, getStrongSuccessDelta } from "./config.mjs";
 import { resolveOutcome } from "./outcome.mjs";
-import { actorHasTool } from "./materials.mjs";
+import { actorHasTool, TOOL_NAMES } from "./materials.mjs";
 
 /**
  * Register both query handlers in CONFIG.queries.
@@ -25,20 +25,20 @@ function validateToolRequirement(actor, activityId) {
   const journeymanActivities = ["craftDisguise", "applyModification"];
 
   if (journeymanActivities.includes(activityId)) {
-    // Journeyman: requires Portable Workbench (portable: true)
-    if (!actorHasTool(actor, { portable: true })) {
+    // Journeyman: requires Portable Workbench
+    if (!actorHasTool(actor, TOOL_NAMES.workbench)) {
       return { ok: false, reason: "missingPortableWorkbench" };
     }
   } else if (noviceActivities.includes(activityId)) {
-    // Novice: requires Tailor's Toolkit (primary: true)
-    if (!actorHasTool(actor, { primary: true })) {
+    // Novice: requires Tailor's Toolkit
+    if (!actorHasTool(actor, TOOL_NAMES.toolkit)) {
       return { ok: false, reason: "missingToolkit" };
     }
   }
 
   // Mend additionally requires Repair Kit
   if (activityId === "mend") {
-    if (!actorHasTool(actor, { usedBy: ["mend"] })) {
+    if (!actorHasTool(actor, TOOL_NAMES.repairKit)) {
       return { ok: false, reason: "missingRepairKit" };
     }
   }

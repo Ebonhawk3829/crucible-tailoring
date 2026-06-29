@@ -3,7 +3,7 @@
 // These functions run on the PLAYER's client before the GM pings.
 
 import { MODULE_ID, FLAGS, getMaterialDC, getMendDC } from "./config.mjs";
-import { actorHasTool } from "./materials.mjs";
+import { actorHasTool, TOOL_NAMES } from "./materials.mjs";
 
 /**
  * Activity definition registry.
@@ -14,7 +14,7 @@ export const ACTIVITY_DEFS = {
   craftTradeGoods: {
     id: "craftTradeGoods",
     tier: "novice",
-    toolCheck: (actor) => actorHasTool(actor, { primary: true }),
+    toolCheck: (actor) => actorHasTool(actor, TOOL_NAMES.toolkit),
     toolFailKey: "crucible-tailoring.query.missingToolkit",
 
     /**
@@ -66,15 +66,15 @@ export const ACTIVITY_DEFS = {
   craftEquipment: {
     id: "craftEquipment",
     tier: "novice",
-    toolCheck: (actor) => actorHasTool(actor, { primary: true }),
+    toolCheck: (actor) => actorHasTool(actor, TOOL_NAMES.toolkit),
     toolFailKey: "crucible-tailoring.query.missingToolkit",
 
     assemblePayload(actor, selectedMaterials, extra = {}) {
       if (!selectedMaterials?.length || !extra.outputItem) return null;
       const materialQuality = selectedMaterials[0].system?.quality ?? "standard";
       const dc = getMaterialDC(materialQuality);
-      // outputItem may be a real Foundry Item (has uuid) or a seed entry (plain object)
-      const outputItemId = extra.outputItem.uuid ?? extra.outputItem._tailoring?.compendiumKey ?? extra.outputItem.name;
+      // outputItem is always a real Foundry Item (from getRegisteredRecipes or recipe drop zone)
+      const outputItemId = extra.outputItem.uuid;
       return {
         actorUuid: actor.uuid,
         activityId: "craftEquipment",
@@ -88,10 +88,8 @@ export const ACTIVITY_DEFS = {
     buildOutputSpec(band, quality, payload, extra = {}) {
       const outputItem = extra.outputItem;
       if (!outputItem) return null;
-      // outputItem may be a real Foundry Item or a seed entry (plain object)
-      const compendiumKey = typeof outputItem.getFlag === "function"
-        ? outputItem.getFlag(MODULE_ID, FLAGS.compendiumKey)
-        : outputItem._tailoring?.compendiumKey ?? null;
+      // outputItem is always a real Foundry Item
+      const compendiumKey = outputItem.getFlag(MODULE_ID, FLAGS.compendiumKey) ?? null;
       return {
         type: outputItem.type,
         name: outputItem.name,
@@ -109,7 +107,7 @@ export const ACTIVITY_DEFS = {
     id: "mend",
     tier: "novice",
     toolCheck: (actor) =>
-      actorHasTool(actor, { primary: true }) && actorHasTool(actor, { usedBy: ["mend"] }),
+      actorHasTool(actor, TOOL_NAMES.toolkit) && actorHasTool(actor, TOOL_NAMES.repairKit),
     toolFailKey: "crucible-tailoring.query.missingRepairKit",
 
     assemblePayload(actor, selectedMaterials, extra = {}) {
@@ -162,7 +160,7 @@ export const ACTIVITY_DEFS = {
   craftDisguise: {
     id: "craftDisguise",
     tier: "journeyman",
-    toolCheck: (actor) => actorHasTool(actor, { portable: true }),
+    toolCheck: (actor) => actorHasTool(actor, TOOL_NAMES.workbench),
     toolFailKey: "crucible-tailoring.query.missingPortableWorkbench",
 
     assemblePayload(actor, selectedMaterials, extra = {}) {
@@ -218,7 +216,7 @@ export const ACTIVITY_DEFS = {
   applyModification: {
     id: "applyModification",
     tier: "journeyman",
-    toolCheck: (actor) => actorHasTool(actor, { portable: true }),
+    toolCheck: (actor) => actorHasTool(actor, TOOL_NAMES.workbench),
     toolFailKey: "crucible-tailoring.query.missingPortableWorkbench",
 
     assemblePayload(actor, selectedMaterials, extra = {}) {

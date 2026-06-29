@@ -5,7 +5,9 @@ import {
   getActorMaterials,
   computeMaterialsRequired,
   actorHasTool,
-  getSeedEntriesByRole
+  TOOL_NAMES,
+  getRegisteredRecipes,
+  tagItemAsRecipe
 } from "./materials.mjs";
 
 const { ApplicationV2, DialogV2 } = foundry.applications.api;
@@ -89,12 +91,6 @@ export class TailoringHub extends ApplicationV2 {
   actor = null;
 
   /**
-   * Recipe drop result (populated when an item is dragged into the recipe box).
-   * @type {object|null}
-   */
-  recipeResult = null;
-
-  /**
    * Open the hub for a specific actor. Performs the gate check first.
    * @param {Actor} actor
    */
@@ -124,15 +120,26 @@ export class TailoringHub extends ApplicationV2 {
       requiredTier: act.tierLabel
     }));
 
-    // Build tool list
-    const seedTools = await getSeedEntriesByRole("tool");
-    const tools = seedTools.map(t => ({
+    // Build tool list — tools are standard Crucible items checked by name
+    const toolDefs = [
+      { name: TOOL_NAMES.toolkit, img: "icons/tools/hand/needle-grey.webp", key: "toolkit" },
+      { name: TOOL_NAMES.workbench, img: "icons/containers/chest/chest-reinforced-steel.webp", key: "workbench" },
+      { name: TOOL_NAMES.repairKit, img: "icons/tools/hand/awl-steel-tan.webp", key: "repairKit" }
+    ];
+    const tools = toolDefs.map(t => ({
       name: t.name,
       img: t.img,
-      possessed: actorHasTool(this.actor, {
-        compendiumKey: t._tailoring?.compendiumKey
-      }) || (t._tailoring?.primary && actorHasTool(this.actor, { primary: true }))
-        || (t._tailoring?.portable && actorHasTool(this.actor, { portable: true }))
+      possessed: actorHasTool(this.actor, t.name)
+    }));
+
+    // Build registered recipes list
+    const recipes = getRegisteredRecipes().map(r => ({
+      id: r.id,
+      name: r.name,
+      img: r.img,
+      quality: r.system?.quality ?? "standard",
+      price: r.system?.price ?? 0,
+      materialsRequired: computeMaterialsRequired(r).materialsRequired
     }));
 
     return {
@@ -148,7 +155,8 @@ export class TailoringHub extends ApplicationV2 {
         quantity: m.system?.quantity ?? null
       })),
       tools,
-      recipeResult: this.recipeResult
+      recipes,
+      recipeCount: recipes.length
     };
   }
 
@@ -343,16 +351,24 @@ export class TailoringHub extends ApplicationV2 {
 
   /**
    * Open a dialog to select an output item for Craft Equipment.
+   * Uses registered recipes (world items tagged with recipeTag).
+   * These are populated by ensureSeedItems() Phase 2 (tagging existing
+   * Crucible items) and by the recipe drop zone (manual registration).
    * @returns {Promise<Item|null>}
    */
   async _selectOutputItem() {
-    const { getSeedEntriesByRole } = await import("./materials.mjs");
-    const outputs = await getSeedEntriesByRole("output");
+    const { getRegisteredRecipes } = await import("./materials.mjs");
+    const recipes = getRegisteredRecipes();
 
-    const options = outputs.map(o => ({
-      value: o._tailoring?.compendiumKey ?? o.name,
-      label: `${o.name} (${o.system?.category ?? "?"}) — ${o.system?.price ?? 0} cp`,
-      img: o.img
+    if (recipes.length === 0) {
+      ui.notifications.warn(game.i18n.localize("crucible-tailoring.flow.noRecipesAvailable"));
+      return null;
+    }
+
+    const options = recipes.map(r => ({
+      value: r.uuid,
+      label: `${r.name} (${r.system?.category ?? "?"}) — ${r.system?.price ?? 0} cp`,
+      img: r.img
     }));
 
     const content = `
@@ -371,7 +387,7 @@ export class TailoringHub extends ApplicationV2 {
     `;
 
     // Capture form state inside the button callback, before the dialog closes
-    let selectedKey = null;
+    let selectedUuid = null;
     const result = await DialogV2.wait({
       window: { title: game.i18n.localize("crucible-tailoring.flow.selectOutputTitle"), icon: "fa-hammer" },
       content,
@@ -381,7 +397,7 @@ export class TailoringHub extends ApplicationV2 {
         default: true,
         callback: (event, button, dialog) => {
           const radio = dialog.element.querySelector("input[name='outputItem']:checked");
-          selectedKey = radio?.value ?? null;
+          selectedUuid = radio?.value ?? null;
         }
       }, {
         action: "cancel",
@@ -389,16 +405,9 @@ export class TailoringHub extends ApplicationV2 {
       }]
     });
 
-    if (result !== "ok" || !selectedKey) return null;
+    if (result !== "ok" || !selectedUuid) return null;
 
-    const selected = outputs.find(o => (o._tailoring?.compendiumKey ?? o.name) === selectedKey);
-    if (!selected) return null;
-
-    // Try to find the actual world item first, fall back to seed data
-    const existing = game.items.find(i =>
-      i.getFlag(MODULE_ID, "compendiumKey") === selectedKey
-    );
-    return existing ?? selected;
+    return await fromUuid(selectedUuid);
   }
 
   /**
@@ -563,7 +572,7 @@ export class TailoringHub extends ApplicationV2 {
 
   /**
    * Handle dropping an item into the recipe box.
-   * Reads the item's price and computes materials required.
+   * Tags the item as a tailoring recipe (craftable product).
    * @param {DragEvent} event
    */
   async _onRecipeDrop(event) {
@@ -574,13 +583,10 @@ export class TailoringHub extends ApplicationV2 {
     const item = await fromUuid(data.uuid);
     if (!item) return;
 
-    const { materialsRequired, priceInCopper } = computeMaterialsRequired(item);
-    this.recipeResult = {
-      name: item.name,
-      img: item.img,
-      materialsRequired,
-      priceInCopper
-    };
+    await tagItemAsRecipe(item);
+    ui.notifications.info(
+      game.i18n.format("crucible-tailoring.hub.recipeRegistered", { name: item.name })
+    );
     this.render();
   }
 

@@ -12,6 +12,7 @@ export const FLAGS = {
   proposal: "proposal",
   compendiumKey: "compendiumKey",
   materialTag: "materialTag",
+  recipeTag: "recipeTag",
   role: "role",
   primary: "primary",
   portable: "portable",

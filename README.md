@@ -11,17 +11,15 @@ Adds a **Tailoring Hub** where players with the Tailoring tradeskill can craft e
 
 ## Features
 
-- **Tailoring Hub** — A player-facing ApplicationV2 window showing tailoring rank, skill bonus, tagged materials, owned tools, and available activities.
+- **Tailoring Hub** — A player-facing window showing tailoring rank, skill bonus, tagged materials, owned tools, and available activities.
 - **Five Craft Activities** — Craft Trade Goods, Craft Equipment, Mend Party Clothing, Craft Disguise, and Apply Modification, each with its own setup dialog and output.
-- **GM-Confirmed Write Pipeline** — The player originates every decision; the GM is a delegated relay for the skill roll and the final confirm. Only the GM confirm button mutates world items.
-- **Material Import** — Drag items from the sidebar into the Hub to tag them as tailoring materials. A recipe calculator box computes materials required from an item's price.
+- **Material Import** — Drag items from the sidebar into the Hub to tag them as tailoring materials.
+- **Recipe Registration** — Drag items from the sidebar into the recipe zone to register them as craftable products. The hub displays the materials required for each recipe.
 - **Quality-Based Outcomes** — Strong success / success / failure / strong failure bands determine whether the output is one tier higher, matches, drops a tier, or is ruined.
 - **Tool Requirements** — Novice activities require a Tailor's Toolkit; Journeyman activities require a Portable Workbench; Mend additionally requires a Repair Kit.
-- **Mend Boons** — Mend produces a consumable that applies social-skill boons (Diplomacy, Deception, Intimidation, Persuasion, Society) until the next rest.
+- **Mend Boons** — Mend produces a consumable that applies social-skill boons (Deception, Diplomacy, Intimidation, Performance) until the next rest. 
 - **Modification via Affixes** — The Apply Modification dialog lets the player drag a real Crucible affix from the compendium onto the output side. Modifications share affix slots with enchantments.
 - **Disguises** — Craft social disguises (Deception boons) or environmental disguises (Stealth boons) for specific contexts.
-- **One Proposal Per Actor** — A player can only have one pending GM proposal at a time, preventing queue spam.
-- **Stackable-Aware Consumption** — Stackable items are decremented rather than deleted; only fully depleted stacks are removed.
 - **Configurable DCs** — All material DCs, the mend DC, and the strong-success delta are world-scoped settings adjustable from the Configure Settings menu.
 
 ## Installation
@@ -68,7 +66,7 @@ All settings are world-scoped and configurable by the GM under **Settings** → 
 
 1. **Open the Hub** — Click the **Tailoring** button on a character sheet (requires Tailoring training rank ≥ 1).
 2. **Import materials** — Drag items from the sidebar into the Hub's import zone to tag them as tailoring materials.
-3. **Select an activity** — Click an activity card. Locked activities show their required tier.
+3. **Register recipes** — Drag items from the sidebar into the recipe zone to register them as craftable products.
 4. **Choose materials and options** — Each activity opens a setup dialog: select materials, pick an output item, choose party members (Mend), set disguise type and context (Disguise), or drag an affix (Modification).
 5. **Roll** — The GM's client runs the skill check; the player rolls in their own dialog.
 6. **Review** — A convert dialog shows what will be consumed and produced at the rolled quality. Approve or cancel.
@@ -81,9 +79,9 @@ The module uses Foundry v14's `User#query` system for all cross-client communica
 1. **`crucible-tailoring.requestRoll`** — GM resolves the actor, validates tool possession, builds the check via `getSkillCheck`, and runs `StandardCheck.request()` so the player rolls in their own dialog. Returns `{ok, total, band, quality}`.
 2. **`crucible-tailoring.proposeOutput`** — GM posts a flagged chat card with a confirm button. On confirm, re-validates inputs, handles stackable quantity decrement, and performs the write.
 
-Seed items (tools, trade goods, outputs, consumables) are created automatically on first load via `ensureSeedItems()`. Modifications are affix references, not items — the GM authors real affixes in a compendium.
+Seed items fall into two categories: **create** (module-specific items like trade goods, consumables, and disguises are created via `Item.create()` on first load) and **reference** (existing Crucible items like armor and accessories are found by name+type and tagged with recipe flags). Tools are standard Crucible items checked by name in the actor's inventory — no item creation needed. Modifications are affix references, not items — the GM authors real affixes in a compendium.
 
-Mend boons use infinite-duration ActiveEffects cleared by a `Hooks.on("rest", …)` listener, since Crucible has no "until next rest" duration primitive.
+Mend boons use Crucible's action hook system (`crucible.api.hooks.action`) to record an effect event during the `postActivate` lifecycle phase. The boon ActiveEffect is applied by Crucible during action confirmation — no direct document writes. The effect has infinite duration and is cleared by a `Hooks.on("rest", …)` listener, since Crucible has no "until next rest" duration primitive.
 
 ## Compatibility
 

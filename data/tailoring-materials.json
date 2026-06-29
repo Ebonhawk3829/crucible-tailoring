@@ -1,31 +1,14 @@
 {
   "_meta": {
-    "description": "Seed list of tailoring-relevant items for the Crucible Tailoring module. Entries with a populated `system` block are created in-world via Item.create() at init if no existing world item carries a matching _tailoring.compendiumKey flag. Raw textile materials are intentionally NOT seeded — they are added at runtime via the module's drag-from-compendium import panel.",
-    "identityKey": "_tailoring.compendiumKey is the canonical identity key. ensureSeedItems() checks for an existing world item with a matching flag; if none exists, creates from the seed entry.",
+    "description": "Seed list of tailoring-relevant items for the Crucible Tailoring module. Each entry has a _tailoring.seedAction field: 'create' means Item.create() at init (module-specific items that don't exist in Crucible); 'reference' means find the existing world item by name+type and tag it with recipeTag + role flags (armor, accessories, materials that already exist in Crucible's system compendiums).",
+    "identityKey": "_tailoring.compendiumKey is the canonical identity key for create-type entries. For reference-type entries, matching is by name + type against game.items.",
     "priceNote": "system.price is the BASE price at standard quality. Crucible scales displayed price at runtime via computePrice(base, rarity); do not pre-scale.",
     "qualityTiers": ["shoddy", "standard", "fine", "superior", "masterwork"]
   },
 
-  "tools": [
-    {
-      "type": "tool",
-      "name": "Tailor's Toolkit",
-      "system": { "category": "crafting", "quality": "standard", "price": 1200, "weight": 20, "skills": ["tailoring"] },
-      "_tailoring": { "role": "tool", "compendiumKey": "tailorsToolkit00", "primary": true }
-    },
-    {
-      "type": "tool",
-      "name": "Tailor's Portable Workbench",
-      "system": { "category": "crafting", "quality": "standard", "price": 3000, "weight": 20, "skills": ["tailoring"] },
-      "_tailoring": { "role": "tool", "compendiumKey": "tailorsPortableW", "portable": true }
-    },
-    {
-      "type": "tool",
-      "name": "Repair Kit (tailor)",
-      "system": { "category": "crafting", "quality": "standard", "price": 120, "weight": 3, "skills": ["tailoring"] },
-      "_tailoring": { "role": "tool", "compendiumKey": "repairKitTailor0", "usedBy": ["mend"] }
-    }
-  ],
+  "tools": {
+    "_note": "Tools are standard Crucible items the GM imports from compendiums. The module checks for them by name in the actor's inventory — no Item.create() needed. Listed here for hub display only."
+  },
 
   "tradeGoods": [
     {
@@ -44,6 +27,7 @@
         }
       },
       "_tailoring": {
+        "seedAction": "create",
         "role": "tradeGood",
         "authorable": true,
         "producedBy": ["craftTradeGoods"],
@@ -54,32 +38,32 @@
   ],
 
   "outputs": {
-    "_note": "Items the craft/equip activities can produce. These are real base items in the compendium that accept quality upgrades; an output spec points at one of these plus a target quality tier.",
+    "_note": "Armor and accessories that already exist in Crucible's system compendiums. These are NOT created via Item.create() — ensureSeedItems() finds them in the world by name+type and tags them with recipeTag + role flags. The GM must have imported these items from compendiums into the world first.",
     "armor": [
-      { "type": "armor", "name": "Common Clothing", "system": { "category": "unarmored", "quality": "standard", "price": 20, "weight": 1 }, "_tailoring": { "role": "output", "compendiumKey": "commonClothing00" } },
-      { "type": "armor", "name": "Dress Clothing", "system": { "category": "unarmored", "quality": "standard", "price": 60, "weight": 2 }, "_tailoring": { "role": "output", "compendiumKey": "dressClothing000" } },
-      { "type": "armor", "name": "Padded Armor", "system": { "category": "light", "quality": "standard", "price": 200, "weight": 5 }, "_tailoring": { "role": "output", "compendiumKey": "paddedArmor00000" } },
-      { "type": "armor", "name": "Leather Armor", "system": { "category": "light", "quality": "standard", "price": 480, "weight": 12 }, "_tailoring": { "role": "output", "compendiumKey": "leatherArmor0000" } },
-      { "type": "armor", "name": "Studded Leather Armor", "system": { "category": "light", "quality": "standard", "price": 640, "weight": 16 }, "_tailoring": { "role": "output", "compendiumKey": "studdedLeatherAr" } },
-      { "type": "armor", "name": "Brigandine", "system": { "category": "medium", "quality": "standard", "price": 2000, "weight": 25 }, "_tailoring": { "role": "output", "compendiumKey": "brigandine000000", "composite": true } },
-      { "type": "armor", "name": "Ring Mail", "system": { "category": "medium", "quality": "standard", "price": 800, "weight": 20 }, "_tailoring": { "role": "output", "compendiumKey": "ringMail00000000", "composite": true } },
-      { "type": "armor", "name": "Scale Mail", "system": { "category": "medium", "quality": "standard", "price": 2400, "weight": 30 }, "_tailoring": { "role": "output", "compendiumKey": "scaleMail0000000", "composite": true } },
-      { "type": "armor", "name": "Heavy Hides", "system": { "category": "medium", "quality": "standard", "price": 400, "weight": 20 }, "_tailoring": { "role": "output", "compendiumKey": "heavyHides000000" } }
+      { "type": "armor", "name": "Common Clothing", "_tailoring": { "seedAction": "reference", "role": "output", "compendiumKey": "commonClothing00" } },
+      { "type": "armor", "name": "Dress Clothing", "_tailoring": { "seedAction": "reference", "role": "output", "compendiumKey": "dressClothing000" } },
+      { "type": "armor", "name": "Padded Armor", "_tailoring": { "seedAction": "reference", "role": "output", "compendiumKey": "paddedArmor00000" } },
+      { "type": "armor", "name": "Leather Armor", "_tailoring": { "seedAction": "reference", "role": "output", "compendiumKey": "leatherArmor0000" } },
+      { "type": "armor", "name": "Studded Leather Armor", "_tailoring": { "seedAction": "reference", "role": "output", "compendiumKey": "studdedLeatherAr" } },
+      { "type": "armor", "name": "Brigandine", "_tailoring": { "seedAction": "reference", "role": "output", "compendiumKey": "brigandine000000", "composite": true } },
+      { "type": "armor", "name": "Ring Mail", "_tailoring": { "seedAction": "reference", "role": "output", "compendiumKey": "ringMail00000000", "composite": true } },
+      { "type": "armor", "name": "Scale Mail", "_tailoring": { "seedAction": "reference", "role": "output", "compendiumKey": "scaleMail0000000", "composite": true } },
+      { "type": "armor", "name": "Heavy Hides", "_tailoring": { "seedAction": "reference", "role": "output", "compendiumKey": "heavyHides000000" } }
     ],
     "accessories": [
-      { "type": "accessory", "name": "Cloak", "system": { "category": "clothing", "quality": "standard", "price": 50, "weight": 1 }, "_tailoring": { "role": "output", "compendiumKey": "cloak00000000000", "template": true } },
-      { "type": "accessory", "name": "Belt", "system": { "category": "clothing", "quality": "standard", "price": 20, "weight": 0 }, "_tailoring": { "role": "output", "compendiumKey": "belt000000000000", "template": true } },
-      { "type": "accessory", "name": "Bracer", "system": { "category": "clothing", "quality": "standard", "price": 50, "weight": 1 }, "_tailoring": { "role": "output", "compendiumKey": "bracer0000000000", "template": true } },
-      { "type": "accessory", "name": "Helm", "system": { "category": "clothing", "quality": "standard", "price": 50, "weight": 1 }, "_tailoring": { "role": "output", "compendiumKey": "helm000000000000", "template": true } },
-      { "type": "accessory", "name": "Weather Clothing", "system": { "category": "clothing", "quality": "standard", "price": 40, "weight": 2 }, "_tailoring": { "role": "output", "compendiumKey": "weatherClothing0" } },
-      { "type": "accessory", "name": "Expanded Toolbelt", "system": { "category": "clothing", "quality": "standard", "price": 100, "weight": 3 }, "_tailoring": { "role": "output", "compendiumKey": "expandedToolbelt" } }
+      { "type": "accessory", "name": "Cloak", "_tailoring": { "seedAction": "reference", "role": "output", "compendiumKey": "cloak00000000000", "template": true } },
+      { "type": "accessory", "name": "Belt", "_tailoring": { "seedAction": "reference", "role": "output", "compendiumKey": "belt000000000000", "template": true } },
+      { "type": "accessory", "name": "Bracer", "_tailoring": { "seedAction": "reference", "role": "output", "compendiumKey": "bracer0000000000", "template": true } },
+      { "type": "accessory", "name": "Helm", "_tailoring": { "seedAction": "reference", "role": "output", "compendiumKey": "helm000000000000", "template": true } },
+      { "type": "accessory", "name": "Weather Clothing", "_tailoring": { "seedAction": "reference", "role": "output", "compendiumKey": "weatherClothing0" } },
+      { "type": "accessory", "name": "Expanded Toolbelt", "_tailoring": { "seedAction": "reference", "role": "output", "compendiumKey": "expandedToolbelt" } }
     ]
   },
 
   "materials": {
-    "_note": "Only catalogued, confirmed items are seeded. All raw textiles (wool, cloth, leather, thread, scraps, hides) are added at runtime via the drag-from-compendium import panel — there is no source to seed them from.",
+    "_note": "Only catalogued, confirmed items are listed. All raw textiles (wool, cloth, leather, thread, scraps, hides) are added at runtime via the drag-from-compendium import panel. The Blanket entry is a reference — it already exists in Crucible and just needs the materialTag flag.",
     "confirmed": [
-      { "type": "loot", "name": "Blanket", "system": { "category": "other", "quality": "standard", "price": 60, "weight": 4 }, "_tailoring": { "role": "material", "compendiumKey": "blanket000000000" } }
+      { "type": "loot", "name": "Blanket", "_tailoring": { "seedAction": "reference", "role": "material", "compendiumKey": "blanket000000000" } }
     ]
   },
 
@@ -222,6 +206,7 @@
           }
         },
         "_tailoring": {
+          "seedAction": "create",
           "role": "disguise",
           "compendiumKey": "disguiseSocial0",
           "disguiseType": "social",
@@ -244,6 +229,7 @@
           }
         },
         "_tailoring": {
+          "seedAction": "create",
           "role": "disguise",
           "compendiumKey": "disguiseEnviron0",
           "disguiseType": "environmental",
@@ -272,6 +258,7 @@
         }
       },
       "_tailoring": {
+        "seedAction": "create",
         "role": "consumable",
         "compendiumKey": "mendConsumable0",
         "producedBy": ["mend"],

@@ -1,5 +1,6 @@
 // main.mjs — init/ready hooks
-// Registers settings, queries, launch button, Mend AE rest-cleanup.
+// Registers settings, queries, launch button, Mend AE rest-cleanup,
+// and the Mend consumable action hook via crucible.api.hooks.
 
 import { MODULE_ID, registerSettings } from "./config.mjs";
 import { checkCanOpenHub } from "./gating.mjs";
@@ -20,62 +21,60 @@ async function clearMendBoons(actor) {
 }
 
 /**
- * Apply Mend boons to an actor via Crucible's enchantmentBonus system.
- * Crucible skills are derived data ({rank, abilityBonus, skillBonus, enchantmentBonus, score, passive})
- * and are recomputed every prepare cycle. enchantmentBonus is the documented field for
- * external skill modification — it starts at 0 and is added to score in #prepareFinalSkills().
+ * Register the Mend consumable's postActivate hook in crucible.api.hooks.
+ * Uses the stable identifier "mendConsumable0000" set on the consumable at creation time.
  *
- * @param {Item} item - The Mend consumable being used
- * @param {Actor} actor - The actor using it
+ * Crucible's action lifecycle: postActivate fires after all rolls are complete and
+ * effect events have been recorded. This is the documented place to inspect and
+ * modify the event stream. We record the Mend boon as an effect event so Crucible
+ * applies it during confirmation — no direct document writes.
+ *
+ * The consumable itself is consumed by Crucible's normal consumable flow
+ * (CrucibleConsumableItem.consume decrements uses automatically).
+ *
+ * Guarded by a sentinel to prevent double-registration across reloads.
  */
-async function useMendConsumable(item, actor) {
-  const boonCount = item.getFlag(MODULE_ID, "mendBoonCount") ?? 0;
-  if (boonCount <= 0) {
-    ui.notifications.warn(game.i18n.localize("crucible-tailoring.mend.noBoons"));
-    return;
-  }
+function registerMendHook() {
+  const MEND_ID = "mendConsumable0000";
+  if (crucible.api.hooks.action[MEND_ID]) return; // sentinel: already registered
 
-  // Crucible social skill IDs (verified against SYSTEM.SKILLS)
-  const boonSkills = ["deception", "diplomacy", "intimidation", "performance"];
+  crucible.api.hooks.action[MEND_ID] = {
+    postActivate() {
+      const item = this.item;
+      if (!item) return;
+      const boonCount = item.getFlag(MODULE_ID, "mendBoonCount") ?? 0;
+      if (boonCount <= 0) return;
 
-  // Create an ActiveEffect with infinite duration (cleared by rest hook).
-  // Target enchantmentBonus — the Crucible field designed for external skill modification.
-  const effectData = {
-    name: game.i18n.localize("crucible-tailoring.mend.effectName"),
-    icon: item.img,
-    origin: item.uuid,
-    duration: { value: 0, units: "rounds" }, // infinite
-    flags: {
-      [MODULE_ID]: {
-        useEffect: "applyMendBoons",
-        boonCount,
-        boonSkills
-      }
-    },
-    changes: boonSkills.map(skill => ({
-      key: `system.skills.${skill}.enchantmentBonus`,
-      mode: CONST.ACTIVE_EFFECT_MODES.ADD,
-      value: boonCount
-    })),
-    description: game.i18n.format("crucible-tailoring.mend.effectDescription", { boonCount })
+      const boonSkills = ["deception", "diplomacy", "intimidation", "performance"];
+
+      // Record the Mend boon as an effect event in the action's event stream.
+      // Crucible applies recorded effects during confirmation — no direct writes.
+      this.recordEvent({
+        type: "effect",
+        target: this.actor,
+        effects: [{
+          name: game.i18n.localize("crucible-tailoring.mend.effectName"),
+          img: item.img,
+          origin: item.uuid,
+          duration: { value: 0, units: "rounds" }, // infinite, cleared by rest hook
+          flags: {
+            [MODULE_ID]: {
+              useEffect: "applyMendBoons",
+              boonCount,
+              boonSkills
+            }
+          },
+          changes: boonSkills.map(skill => ({
+            key: `system.skills.${skill}.enchantmentBonus`,
+            mode: CONST.ACTIVE_EFFECT_MODES.ADD,
+            value: boonCount
+          }))
+        }]
+      });
+    }
   };
 
-  await actor.createEmbeddedDocuments("ActiveEffect", [effectData]);
-
-  // Consume the item using Crucible's built-in consume() for proper stackable handling
-  if (typeof item.system?.consume === "function") {
-    await item.system.consume(1, { save: true });
-  } else {
-    const isStackable = item.system?.properties?.includes?.("stackable") ?? false;
-    const quantity = Number(item.system?.quantity) || 1;
-    if (isStackable && quantity > 1) {
-      await item.update({ "system.quantity": quantity - 1 });
-    } else {
-      await actor.deleteEmbeddedDocuments("Item", [item.id]);
-    }
-  }
-
-  ui.notifications.info(game.i18n.format("crucible-tailoring.mend.applied", { boonCount }));
+  console.log("crucible-tailoring | Registered Mend consumable action hook");
 }
 
 Hooks.once("init", () => {
@@ -111,23 +110,12 @@ Hooks.once("ready", async () => {
     await clearMendBoons(actor);
   });
 
-  // Register a Crucible talent hook for Mend consumable usage.
-  // Crucible does not fire a generic "useItem" hook; item usage flows through
-  // CrucibleAction/useAction. We register a prepareAction hook that checks
-  // for Mend consumables and applies their boons when the item is used.
-  // The actual integration point depends on how Mend consumables are configured
-  // as actions — this hook fires during action preparation on the actor.
-  Hooks.on("crucible.prepareAction", (item, action) => {
-    if (item.getFlag(MODULE_ID, "useEffect") !== "applyMendBoons") return;
-    const actor = item.parent;
-    if (!actor) return;
-    // Defer to the action's postActivate to apply the boon after the action completes
-    const origPostActivate = action.postActivate;
-    action.postActivate = async function () {
-      if (origPostActivate) await origPostActivate.call(this);
-      await useMendConsumable(item, actor);
-    };
-  });
+  // Register the Mend consumable action hook via crucible.api.hooks.
+  // Crucible's actor hooks are registered keyed by talent/affix/item ID in
+  // crucible.api.hooks.action, NOT via the global Hooks bus. The hook fires
+  // during Phase 2 (postActivate) and records an effect event — no direct
+  // document writes, per Crucible's lifecycle guidance.
+  registerMendHook();
 
   // Add a launch button to Crucible actor sheets.
   // Crucible uses ApplicationV2 sheets — use renderActorSheetV2 with native DOM.

@@ -55,21 +55,26 @@
   </section>
 
   <section class="hub-section">
-    <h3>{{localize "crucible-tailoring.hub.recipeBox"}}</h3>
-    <div class="hub-recipe-box" data-action="recipe-drop">
-      {{#if recipeResult}}
-      <div class="recipe-result">
-        <img src="{{recipeResult.img}}" alt="{{recipeResult.name}}" />
-        <div class="recipe-info">
-          <strong>{{recipeResult.name}}</strong>
-          <span>{{localize "crucible-tailoring.hub.materialsRequired"}}: {{recipeResult.materialsRequired}}</span>
-          <span class="recipe-price">{{localize "crucible-tailoring.hub.price"}}: {{recipeResult.priceInCopper}} cp</span>
-        </div>
-      </div>
+    <h3>{{localize "crucible-tailoring.hub.recipes"}}</h3>
+    <div class="hub-recipes">
+      {{#if recipes.length}}
+      <ul class="recipe-list">
+        {{#each recipes}}
+        <li class="recipe-item" data-item-id="{{id}}">
+          <img src="{{img}}" alt="{{name}}" class="recipe-icon" />
+          <span class="recipe-name">{{name}}</span>
+          <span class="recipe-quality quality-{{quality}}">{{quality}}</span>
+          <span class="recipe-cost">{{localize "crucible-tailoring.hub.materialsRequired"}}: {{materialsRequired}}</span>
+        </li>
+        {{/each}}
+      </ul>
       {{else}}
+      <p class="hub-empty">{{localize "crucible-tailoring.hub.noRecipes"}}</p>
+      {{/if}}
+    </div>
+    <div class="hub-recipe-box" data-action="recipe-drop">
       <i class="fas fa-box-open"></i>
       <span>{{localize "crucible-tailoring.hub.recipeDropPrompt"}}</span>
-      {{/if}}
     </div>
   </section>
 
