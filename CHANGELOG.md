@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2-dev] — Prerelease
+
+### Fixed
+- **Seed tools iteration crash**: `collectCreatableEntries` called `for...of` on `seed.tools`, which is a plain object `{ _note: "…" }` in the JSON, not an array — threw `object is not iterable` on module startup, blocking all seed item creation. Removed the dead loop; tools are never seeded as items (they're standard Crucible items checked by name in actor inventory).
+
 ## [0.2.1-dev] — Prerelease
 
 ### Fixed
