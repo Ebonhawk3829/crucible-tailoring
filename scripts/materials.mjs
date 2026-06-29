@@ -1,5 +1,5 @@
 // materials.mjs — seed JSON loading, seed-to-world conversion, drag-import, recipe box
-import { MODULE_ID, FLAGS, getMaterialsPerCopper } from "./config.mjs";
+import { MODULE_ID, FLAGS, QUALITY_TIERS, getMaterialsPerCopper } from "./config.mjs";
 
 // Cache the loaded seed data so we only fetch once.
 let _seedData = null;
@@ -173,7 +173,10 @@ export async function ensureSeedItems() {
 
   for (const { entry } of creatableEntries) {
     const compendiumKey = entry._tailoring?.compendiumKey;
-    if (!compendiumKey) continue;
+    if (!compendiumKey) {
+      console.warn(`crucible-tailoring | Create entry "${entry.name}" has no compendiumKey — skipping. Add one to the seed JSON.`);
+      continue;
+    }
 
     const existing = findExistingByCompendiumKey(compendiumKey, keyMap);
     if (existing) continue;

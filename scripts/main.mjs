@@ -112,25 +112,27 @@ Hooks.once("ready", async () => {
     // Only add the button if it doesn't already exist
     if (element.querySelector(".crucible-tailoring-launch")) return;
 
-    const button = document.createElement("a");
+    const button = document.createElement("button");
+    button.type = "button";
     button.className = "crucible-tailoring-launch";
     button.title = game.i18n.localize("crucible-tailoring.hub.launch");
     button.innerHTML = `<i class="fas fa-scissors"></i> ${game.i18n.localize("crucible-tailoring.hub.launch")}`;
 
-    button.addEventListener("click", async () => {
+    button.addEventListener("click", async (e) => {
+      e.stopPropagation();
       if (!checkCanOpenHub(actor)) return;
       const { TailoringHub } = await import("./hub.mjs");
       await TailoringHub.open(actor);
     });
 
     // Append to the sheet's header buttons area
-    const header = element.querySelector(".window-header .window-title");
-    if (header) {
-      header.after(button);
+    const headerButtons = element.querySelector(".window-header .header-buttons");
+    if (headerButtons) {
+      headerButtons.append(button);
     } else {
-      // Fallback: append to the sheet's title bar
-      const sheetHeader = element.querySelector(".sheet-header");
-      if (sheetHeader) sheetHeader.append(button);
+      // Fallback: append after the window title
+      const header = element.querySelector(".window-header .window-title");
+      if (header) header.after(button);
     }
   });
 });

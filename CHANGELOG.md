@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.6-dev] — Prerelease
+
+### Fixed
+- Material import now infers quality from item name — materials from source modules often embed the quality tier in the name but create everything at default (standard) grade; `tagItemAsMaterial` corrects `system.quality` when a leading quality word is found
+- Trade Goods seed entry now has a `compendiumKey` (`tailoredTradeGo0`) — without it the entry was silently skipped in Phase 1 and never created
+- Missing `compendiumKey` on create-type seed entries now logs a warning instead of silently skipping
+
+### Changed
+- Launch button uses `<button type="button">` with `stopPropagation` — single click reliably opens the hub instead of sometimes requiring a double-click
+- Launch button injected into `.header-buttons` when available (Crucible's sheet header container) instead of appending after the title
+
 ## [0.2.5-dev] — Prerelease
 
 ### Fixed

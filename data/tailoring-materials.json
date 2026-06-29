@@ -29,6 +29,7 @@
       "_tailoring": {
         "seedAction": "create",
         "role": "tradeGood",
+        "compendiumKey": "tailoredTradeGo0",
         "authorable": true,
         "producedBy": ["craftTradeGoods"],
         "qualityScales": true,
