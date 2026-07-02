@@ -14,7 +14,7 @@
     {
       "type": "loot",
       "name": "Tailored Trade Goods",
-      "img": "icons/commodities/cloth/cloth-bolt-gray.webp",
+      "img": "modules/crucible-tailoring/assets/icons/trade-goods.webp",
       "system": {
         "category": "treasure",
         "quality": "standard",

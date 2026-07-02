@@ -1,36 +1,10 @@
 // outcome.mjs — pure success-band → quality mapping
-// ZERO Foundry dependencies. Thresholds are passed as arguments so this
-// file is unit-checkable in isolation (see tests/outcome.test.mjs).
+// ZERO Foundry dependencies. Band resolution is handled by Crucible's native
+// Roll.isCriticalSuccess / Roll.isCriticalFailure (default ±6 from DC), so
+// the old resolveQualityBand/resolveOutcome functions are no longer needed.
+// The remaining helpers are used by queries.mjs and the test suite.
 
 import { BANDS, QUALITY_TIERS } from "./config.mjs";
-
-/**
- * Resolve a roll total against a DC into one of four success bands.
- *
- * Band boundaries (delta = thresholds.strongSuccess):
- *   total >= dc + delta  → STRONG_SUCCESS  (inclusive at near edge)
- *   total >= dc          → SUCCESS
- *   total <= dc - delta  → STRONG_FAILURE  (inclusive at far edge)
- *   otherwise            → FAILURE
- *
- * The bands are intentionally slightly asymmetric at the boundaries:
- * strong-success is inclusive at the near edge (>= dc+delta), while
- * strong-failure is inclusive at the far edge (<= dc-delta). This means
- * a roll exactly at dc+delta is a strong success, but a roll exactly at
- * dc-delta is a strong failure — the "strong" bands each claim one edge.
- *
- * @param {number} total - The roll total
- * @param {number} dc - The difficulty class
- * @param {{strongSuccess: number}} thresholds - e.g. {strongSuccess: 8}
- * @returns {string} One of BANDS.STRONG_SUCCESS | SUCCESS | FAILURE | STRONG_FAILURE
- */
-export function resolveQualityBand(total, dc, thresholds) {
-  const delta = thresholds.strongSuccess;
-  if (total >= dc + delta) return BANDS.STRONG_SUCCESS;
-  if (total >= dc) return BANDS.SUCCESS;
-  if (total <= dc - delta) return BANDS.STRONG_FAILURE;
-  return BANDS.FAILURE;
-}
 
 /**
  * Map a success band to a quality tier delta.
@@ -64,20 +38,4 @@ export function applyQualityDelta(baseQuality, delta) {
   if (idx === -1) return baseQuality;
   const newIdx = Math.max(0, Math.min(QUALITY_TIERS.length - 1, idx + delta));
   return QUALITY_TIERS[newIdx];
-}
-
-/**
- * Full pipeline: roll total → quality tier.
- * Returns {band, quality} where quality is null on strong failure.
- * @param {number} total
- * @param {number} dc
- * @param {string} materialQuality - The quality tier of the materials used
- * @param {{strongSuccess: number}} thresholds
- * @returns {{band: string, quality: string|null}}
- */
-export function resolveOutcome(total, dc, materialQuality, thresholds) {
-  const band = resolveQualityBand(total, dc, thresholds);
-  const delta = bandToQualityDelta(band);
-  const quality = delta === null ? null : applyQualityDelta(materialQuality, delta);
-  return { band, quality };
 }

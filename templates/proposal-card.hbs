@@ -44,6 +44,9 @@
           <li class="proposal-item">
             <img src="{{img}}" alt="{{name}}" />
             <span>{{name}}</span>
+            {{#if quality}}
+            <span class="proposal-quality quality-{{quality}}" style="font-size:0.7rem;">{{quality}}</span>
+            {{/if}}
           </li>
           {{/each}}
         </ul>

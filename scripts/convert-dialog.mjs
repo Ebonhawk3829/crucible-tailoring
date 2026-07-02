@@ -32,12 +32,24 @@ export async function openConvertDialog({ actor, activityId, band, quality, inpu
     ? `<div><img src="${outputSpec.img}" alt="${foundry.utils.escapeHTML(outputSpec.name)}" style="width:24px;height:24px;vertical-align:middle;" /> ${foundry.utils.escapeHTML(outputSpec.name)}</div>`
     : "";
 
-  // Show mend recipients in the convert dialog
+  // Show mend recipients with per-member quality in the convert dialog
   let recipientDisplay = "";
   const partyMemberUuids = outputSpec?._tailoring?.partyMemberUuids;
   if (partyMemberUuids?.length) {
+    const mendAssignments = outputSpec._tailoring.mendAssignments ?? {};
+    const recipientRows = await Promise.all(partyMemberUuids.map(async uuid => {
+      const actor = await fromUuid(uuid);
+      if (!actor) return null;
+      const q = mendAssignments[uuid]?.quality ?? quality ?? "standard";
+      return `<li style="display:flex;align-items:center;gap:0.3rem;">
+        <img src="${actor.img}" alt="${foundry.utils.escapeHTML(actor.name)}" style="width:20px;height:20px;border-radius:3px;" />
+        <span>${foundry.utils.escapeHTML(actor.name)}</span>
+        <span class="quality-${q}" style="font-size:0.7rem;padding:0.05rem 0.25rem;border-radius:3px;text-transform:capitalize;">${q}</span>
+      </li>`;
+    }));
+    const listItems = recipientRows.filter(Boolean).join("");
     const recipients = partyMemberUuids.length;
-    recipientDisplay = `<p style="font-size:0.85rem;color:#666;">${game.i18n.format("crucible-tailoring.convert.recipients", { count: recipients })}</p>`;
+    recipientDisplay = `<p style="font-size:0.85rem;color:#666;">${game.i18n.format("crucible-tailoring.convert.recipients", { count: recipients })}</p><ul style="list-style:none;padding:0;font-size:0.8rem;">${listItems}</ul>`;
   }
 
   const content = `

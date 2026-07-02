@@ -28,7 +28,8 @@ export const FLAGS = {
   resolved: "resolved",
   actorUuid: "actorUuid",
   mendBoonCount: "mendBoonCount",
-  mendPartyUuids: "mendPartyUuids"
+  mendPartyUuids: "mendPartyUuids",
+  mendAssignments: "mendAssignments"
 };
 
 // Timeout constants (milliseconds)
@@ -49,7 +50,6 @@ export const DEFAULTS = {
     masterwork: 24
   },
   mendDC: 14,
-  strongSuccessDelta: 8,
   materialsPerCopper: 15  // divisor for price-in-copper → materials-required formula
 };
 
@@ -79,7 +79,6 @@ export function registerSettings() {
     ["materialDC.superior", { name: "Superior Material DC", hint: "DC for working superior-quality materials.", default: DEFAULTS.materialDC.superior, type: Number }],
     ["materialDC.masterwork", { name: "Masterwork Material DC", hint: "DC for working masterwork-quality materials.", default: DEFAULTS.materialDC.masterwork, type: Number }],
     ["mendDC", { name: "Mend DC", hint: "DC for the Mend Party Clothing activity.", default: DEFAULTS.mendDC, type: Number }],
-    ["strongSuccessDelta", { name: "Strong Success Delta", hint: "How far above/below DC counts as strong success/failure.", default: DEFAULTS.strongSuccessDelta, type: Number }],
     ["materialsPerCopper", { name: "Materials Per Copper", hint: "Divisor for the price→materials formula: materials = max(1, round(priceInCopper / this)).", default: DEFAULTS.materialsPerCopper, type: Number }]
   ];
 
@@ -110,14 +109,6 @@ export function registerSettings() {
  */
 export function getMaterialDC(quality) {
   return game.settings.get(MODULE_ID, `materialDC.${quality}`);
-}
-
-/**
- * Get the strong success delta.
- * @returns {number}
- */
-export function getStrongSuccessDelta() {
-  return game.settings.get(MODULE_ID, "strongSuccessDelta");
 }
 
 /**

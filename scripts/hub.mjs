@@ -1,5 +1,5 @@
 // hub.mjs — TailoringHub ApplicationV2 (player-facing, read-only display)
-import { MODULE_ID } from "./config.mjs";
+import { MODULE_ID, QUALITY_TIERS } from "./config.mjs";
 import { canOpenHub } from "./gating.mjs";
 import {
   getActorMaterials,
@@ -355,23 +355,34 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
       }
 
       case "mend": {
-        // 1. Select party members FIRST (quantity depends on member count)
-        const partyMembers = await this._selectPartyMembers();
-        if (!partyMembers) return;
+        // Combined party member + material quality assignment grid.
+        // Each member gets exactly one quality tier, constrained by inventory.
+        const result = await this._selectMendAssignments();
+        if (!result) return;
 
-        // 2. Then select materials with quantity — min 1 per member
-        const batch = await this._selectMaterialBatch(materials, {
-          minTotal: partyMembers.length,
-          hint: game.i18n.format("crucible-tailoring.flow.mendMaterialHint",
-            { count: partyMembers.length })
-        });
-        if (!batch) return;
+        // Resolve which material items to consume based on quality assignments.
+        // Each assignment consumes exactly 1 material of the assigned quality.
+        const materialItems = [];
+        const materials = getActorMaterials(this.actor);
+        const qualityPool = {}; // quality → [material, ...]
+        for (const m of materials) {
+          const q = m.quality ?? "standard";
+          (qualityPool[q] ??= []).push(m);
+        }
+        for (const [, assignment] of result.assignments) {
+          const pool = qualityPool[assignment.quality];
+          if (pool?.length) materialItems.push(pool.shift());
+        }
 
         await runCraftFlow({
           actor: this.actor,
           activityId,
-          selectedMaterials: batch.materials,
-          extra: { partyMembers, batchCount: batch.totalQuantity, batchSelections: batch.selections }
+          selectedMaterials: materialItems,
+          extra: {
+            partyMembers: result.members,
+            mendAssignments: Object.fromEntries(result.assignments),
+            batchCount: result.assignments.size,
+          }
         });
         break;
       }
@@ -415,6 +426,148 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
 
     // Refresh the hub to show updated inventory
     this.render();
+  }
+
+  /**
+   * Combined party member + material quality selection for Mend.
+   * Renders an interactive table where each member is assigned exactly
+   * one quality tier. Inventory counts constrain assignments in real time.
+   *
+   * @returns {Promise<{members: Actor[], assignments: Map<string, {member: Actor, quality: string, material: object}>}|null>}
+   */
+  async _selectMendAssignments() {
+    const groupActor = crucible.party;
+    if (!groupActor) {
+      ui.notifications.warn(game.i18n.localize("crucible-tailoring.flow.noParty"));
+      return null;
+    }
+
+    // Resolve party members
+    const memberArray = groupActor.system.members ?? [];
+    let members;
+    if (memberArray.actors) {
+      members = Array.from(memberArray.actors);
+    } else {
+      members = Array.from(memberArray)
+        .map(m => game.actors.get(m.actorId ?? m.id))
+        .filter(Boolean);
+    }
+    if (!members.length) {
+      ui.notifications.warn(game.i18n.localize("crucible-tailoring.flow.noPartyMembers"));
+      return null;
+    }
+
+    // Get available materials grouped by quality
+    const materials = getActorMaterials(this.actor);
+    const qualityInventory = {};
+    for (const tier of QUALITY_TIERS) qualityInventory[tier] = 0;
+    for (const m of materials) {
+      const q = m.quality ?? "standard";
+      if (q in qualityInventory) qualityInventory[q] += m.quantity;
+    }
+
+    // Only show quality columns that have at least some inventory
+    const availableQualities = QUALITY_TIERS.filter(q => qualityInventory[q] > 0);
+    if (availableQualities.length === 0) {
+      ui.notifications.warn(game.i18n.localize("crucible-tailoring.flow.noMaterials"));
+      return null;
+    }
+
+    // Build the table HTML
+    const headerCells = availableQualities.map(q =>
+      `<th style="text-align:center;">${q.charAt(0).toUpperCase() + q.slice(1)}<br/>
+       <span class="mend-avail" data-quality="${q}">(${qualityInventory[q]})</span></th>`
+    ).join("");
+
+    const memberRows = members.map(a => {
+      const cells = availableQualities.map(q =>
+        `<td style="text-align:center;">
+          <input type="radio" name="member-${a.uuid}" value="${q}"
+                 class="mend-radio" data-member="${a.uuid}" data-quality="${q}"
+                 ${qualityInventory[q] <= 0 ? "disabled" : ""} />
+        </td>`
+      ).join("");
+      return `<tr>
+        <td style="display:flex;align-items:center;gap:0.4rem;">
+          <img src="${a.img}" alt="${a.name}" style="width:24px;height:24px;border-radius:3px;" />
+          <span>${a.name}</span>
+        </td>
+        ${cells}
+      </tr>`;
+    }).join("");
+
+    const content = `
+      <div class="mend-assignment-grid" style="padding:0.5rem;">
+        <p>${game.i18n.localize("crucible-tailoring.flow.mendAssignmentHint")}</p>
+        <table style="width:100%;border-collapse:collapse;">
+          <thead><tr><th>Member</th>${headerCells}</tr></thead>
+          <tbody>${memberRows}</tbody>
+        </table>
+        <p class="mend-validation-msg" style="font-size:0.75rem;color:red;display:none;"></p>
+      </div>
+    `;
+
+    let assignments = null;
+
+    const result = await DialogV2.wait({
+      window: {
+        title: game.i18n.localize("crucible-tailoring.flow.mendAssignmentTitle"),
+        icon: "fa-paint-brush"
+      },
+      content,
+      render: (event, html) => {
+        // Attach reactive logic: when a radio changes, recompute remaining
+        // inventory and disable radios that would exceed it.
+        const radios = html.querySelectorAll(".mend-radio");
+        const recompute = () => {
+          // Count current selections per quality
+          const used = {};
+          for (const q of availableQualities) used[q] = 0;
+          for (const r of radios) {
+            if (r.checked) used[r.dataset.quality]++;
+          }
+          // Update availability displays and disable overbudget radios
+          for (const q of availableQualities) {
+            const remaining = qualityInventory[q] - used[q];
+            const label = html.querySelector(`.mend-avail[data-quality="${q}"]`);
+            if (label) label.textContent = `(${remaining} left)`;
+            // Disable unchecked radios in this column if no remaining
+            for (const r of radios) {
+              if (r.dataset.quality === q && !r.checked) {
+                r.disabled = remaining <= 0;
+              }
+            }
+          }
+        };
+        for (const r of radios) r.addEventListener("change", recompute);
+        recompute(); // initial pass
+      },
+      buttons: [{
+        action: "ok",
+        label: game.i18n.localize("crucible-tailoring.flow.confirm"),
+        default: true,
+        callback: (event, button, dialog) => {
+          assignments = new Map();
+          for (const a of members) {
+            const checked = dialog.element.querySelector(
+              `input[name="member-${a.uuid}"]:checked`
+            );
+            if (checked) {
+              assignments.set(a.uuid, {
+                member: a,
+                quality: checked.dataset.quality
+              });
+            }
+          }
+        }
+      }, {
+        action: "cancel",
+        label: game.i18n.localize("crucible-tailoring.flow.cancel")
+      }]
+    });
+
+    if (result !== "ok" || !assignments?.size) return null;
+    return { members: [...assignments.values()].map(a => a.member), assignments };
   }
 
   /**
@@ -613,77 +766,6 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
     if (result !== "ok" || !selectedUuid) return null;
 
     return await fromUuid(selectedUuid);
-  }
-
-  /**
-   * Open a dialog to select party members for Mend.
-   * @returns {Promise<Actor[]|null>}
-   */
-  async _selectPartyMembers() {
-    const groupActor = crucible.party;
-    if (!groupActor) {
-      ui.notifications.warn(game.i18n.localize("crucible-tailoring.flow.noParty"));
-      return null;
-    }
-
-    // Resolve members from the group actor (same approach as party-stash)
-    const memberArray = groupActor.system.members ?? [];
-    let members;
-    if (memberArray.actors) {
-      members = Array.from(memberArray.actors);
-    } else {
-      members = Array.from(memberArray)
-        .map(m => game.actors.get(m.actorId ?? m.id))
-        .filter(Boolean);
-    }
-
-    if (!members.length) {
-      ui.notifications.warn(game.i18n.localize("crucible-tailoring.flow.noPartyMembers"));
-      return null;
-    }
-
-    const content = `
-      <div style="padding:0.5rem;">
-        <p>${game.i18n.localize("crucible-tailoring.flow.selectPartyMembers")}</p>
-        <div>
-          ${members.map(a => `
-            <label style="display:flex;align-items:center;gap:0.5rem;padding:0.25rem 0;cursor:pointer;">
-              <input type="checkbox" value="${a.uuid}" class="party-checkbox" ${a.id === this.actor?.id ? "checked" : ""} />
-              <img src="${a.img}" alt="${a.name}" style="width:24px;height:24px;object-fit:contain;border-radius:3px;" />
-              <span>${a.name}</span>
-            </label>
-          `).join("")}
-        </div>
-      </div>
-    `;
-
-    // Capture form state inside the button callback, before the dialog closes
-    let checkedUuids = [];
-    const result = await DialogV2.wait({
-      window: { title: game.i18n.localize("crucible-tailoring.flow.selectPartyMembersTitle"), icon: "fa-users" },
-      content,
-      buttons: [{
-        action: "ok",
-        label: game.i18n.localize("crucible-tailoring.flow.confirm"),
-        default: true,
-        callback: (event, button, dialog) => {
-          checkedUuids = [];
-          dialog.element.querySelectorAll(".party-checkbox:checked").forEach(cb => checkedUuids.push(cb.value));
-        }
-      }, {
-        action: "cancel",
-        label: game.i18n.localize("crucible-tailoring.flow.cancel")
-      }]
-    });
-
-    if (result !== "ok") return null;
-
-    const selected = [];
-    for (const uuid of checkedUuids) {
-      const actor = await fromUuid(uuid);
-      if (actor) selected.push(actor);
-    }
-    return selected.length > 0 ? selected : null;
   }
 
   /**

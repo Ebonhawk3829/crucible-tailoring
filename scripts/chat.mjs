@@ -23,12 +23,19 @@ export async function postProposalCard(actor, payload) {
     if (item) inputItems.push({ name: item.name, img: item.img, uuid });
   }
 
-  // Resolve mend recipients for display
+  // Resolve mend recipients for display, including per-member quality
   const mendTargets = [];
   if (payload.outputSpec?._tailoring?.partyMemberUuids) {
+    const mendAssignments = payload.outputSpec._tailoring.mendAssignments ?? {};
     for (const uuid of payload.outputSpec._tailoring.partyMemberUuids) {
       const member = await fromUuid(uuid);
-      if (member) mendTargets.push({ name: member.name, img: member.img });
+      if (member) {
+        mendTargets.push({
+          name: member.name,
+          img: member.img,
+          quality: mendAssignments[uuid]?.quality ?? payload.quality
+        });
+      }
     }
   }
 
@@ -184,10 +191,12 @@ export async function confirmProposal(message) {
       itemData.system.quality = proposal.quality;
     }
 
-    // Mend: create one consumable on EACH targeted party member
+    // Mend: create one consumable on EACH targeted party member,
+    // using per-member quality from the assignment grid if available.
     if (activityId === "mend" && outputSpec._tailoring?.partyMemberUuids?.length) {
       const memberUuids = outputSpec._tailoring.partyMemberUuids;
-      const boonCount = BOON_SCALE[itemData.system.quality ?? proposal.quality] ?? 0;
+      // Resolve per-member quality from the assignment grid
+      const mendAssignments = outputSpec._tailoring.mendAssignments ?? {};
 
       let deliveredCount = 0;
       for (const memberUuid of memberUuids) {
@@ -197,14 +206,29 @@ export async function confirmProposal(message) {
           continue;
         }
 
-        const created = await member.createEmbeddedDocuments("Item",
-          [foundry.utils.deepClone(itemData)]);
+        // Use the member's assigned quality, falling back to the global quality
+        const memberQuality = mendAssignments[memberUuid]?.quality ?? proposal.quality;
+        const boonCount = BOON_SCALE[memberQuality] ?? 0;
+        const memberItemData = foundry.utils.deepClone(itemData);
+        if (memberQuality && QUALITY_TIERS.includes(memberQuality)) {
+          memberItemData.system.quality = memberQuality;
+        }
+        memberItemData.system.description.public =
+          memberItemData.system.description.public
+            .replace(`<strong>Quality:</strong> ${itemData.system.quality ?? "standard"}`,
+                     `<strong>Quality:</strong> ${memberQuality}`)
+            .replace(`<strong>Boons:</strong> +${BOON_SCALE[itemData.system.quality ?? "standard"] ?? 0}`,
+                     `<strong>Boons:</strong> +${boonCount}`);
+
+        const created = await member.createEmbeddedDocuments("Item", [memberItemData]);
         if (!created?.length) continue;
 
         // Set tailoring flags on the created item
         const flagUpdates = {};
         if (outputSpec._tailoring) {
-          for (const [key, value] of Object.entries(outputSpec._tailoring)) {
+          const tailoringCopy = { ...outputSpec._tailoring };
+          delete tailoringCopy.mendAssignments; // don't flag the full map
+          for (const [key, value] of Object.entries(tailoringCopy)) {
             flagUpdates[`flags.${MODULE_ID}.${key}`] = value;
           }
         }
@@ -217,7 +241,7 @@ export async function confirmProposal(message) {
         }
 
         deliveredCount++;
-        console.log(`crucible-tailoring | Delivered Mended Presentation to ${member.name}`);
+        console.log(`crucible-tailoring | Delivered Mended Presentation (${memberQuality}) to ${member.name}`);
       }
 
       if (deliveredCount === 0) {

@@ -50,7 +50,7 @@ export const ACTIVITY_DEFS = {
       return {
         type: "loot",
         name: "Tailored Trade Goods",
-        img: "icons/commodities/cloth/cloth-bolt-gray.webp",
+        img: "modules/crucible-tailoring/assets/icons/trade-goods.webp",
         system: {
           category: "treasure",
           quality: quality ?? "standard",
@@ -123,13 +123,8 @@ export const ACTIVITY_DEFS = {
       const materialQuality = getMaterialQuality(selectedMaterials[0]);
       const dc = getMendDC();
       const partyMembers = extra.partyMembers ?? [actor];
-      // Build per-material quantity map from batch selections
-      const materialQuantities = {};
-      if (extra.batchSelections) {
-        for (const s of extra.batchSelections) {
-          materialQuantities[s.material.uuid] = s.quantity;
-        }
-      }
+      // Per-member quality assignments from the combined selection grid
+      const mendAssignments = extra.mendAssignments ?? {};
       return {
         actorUuid: actor.uuid,
         activityId: "mend",
@@ -138,16 +133,19 @@ export const ACTIVITY_DEFS = {
         inputUuids: selectedMaterials.map(m => m.uuid),
         partyMemberUuids: partyMembers.map(a => a.uuid),
         partyCount: partyMembers.length,
-        materialQuantities
+        mendAssignments
       };
     },
 
     buildOutputSpec(band, quality, payload, extra = {}) {
       const boonCount = BOON_SCALE[quality] ?? 0;
+      // Carry per-member quality assignments so confirmProposal can create
+      // each consumable at the quality assigned to that specific member.
+      const mendAssignments = payload.mendAssignments ?? extra.mendAssignments ?? {};
       return {
         type: "consumable",
         name: "Mended Presentation",
-        img: "icons/commodities/cloth/cloth-thread-needle.webp",
+        img: "modules/crucible-tailoring/assets/icons/mend-consumable.webp",
         system: {
           category: "other",
           quality: quality ?? "standard",
@@ -166,7 +164,8 @@ export const ACTIVITY_DEFS = {
           boonScale: BOON_SCALE,
           boonSkills: ["deception", "diplomacy", "intimidation", "performance"],
           duration: "infinite",
-          partyMemberUuids: payload.partyMemberUuids ?? []
+          partyMemberUuids: payload.partyMemberUuids ?? [],
+          mendAssignments
         }
       };
     }
@@ -203,8 +202,8 @@ export const ACTIVITY_DEFS = {
         type: "armor",
         name: isSocial ? "Social Disguise" : "Environmental Disguise",
         img: isSocial
-          ? "icons/equipment/chest/robe-layered-blue.webp"
-          : "icons/equipment/chest/robe-layered-green.webp",
+          ? "modules/crucible-tailoring/assets/icons/disguise-social.webp"
+          : "modules/crucible-tailoring/assets/icons/disguise-environmental.webp",
         system: {
           category: "unarmored",
           quality: quality ?? "standard",

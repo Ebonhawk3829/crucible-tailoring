@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0-dev] — Prerelease
+
+### Changed
+- Critical success and failure now use Crucible's built-in roll bands (±6 from DC) instead of a custom configurable delta
+- Mend now uses a combined assignment grid — one dialog per member, one quality tier, inventory-constrained in real time
+- Each mend recipient gets their own quality tier instead of a single global quality for the whole party
+
+### Added
+- Module-specific icons for Trade Goods, Mend consumable, and Disguises (social and environmental)
+
+### Removed
+- `strongSuccessDelta` setting — thresholds are now determined by Crucible's native roll system
+- `resolveQualityBand` and `resolveOutcome` functions — band resolution moved to Crucible's `Roll` object
+
 ## [0.3.5-dev] — Prerelease
 
 ### Added

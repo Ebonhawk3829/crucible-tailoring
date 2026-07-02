@@ -1,8 +1,8 @@
 // queries.mjs — CONFIG.queries handlers (GM-side logic)
 // Both handlers validate inputs GM-side and JSON-serialize their return.
 
-import { MODULE_ID, QUERY_REQUEST_ROLL, QUERY_PROPOSE_OUTPUT, FLAGS, getMaterialDC, getMendDC, getStrongSuccessDelta, QUALITY_TIERS, BOON_SCALE } from "./config.mjs";
-import { resolveOutcome } from "./outcome.mjs";
+import { MODULE_ID, QUERY_REQUEST_ROLL, QUERY_PROPOSE_OUTPUT, FLAGS, getMaterialDC, getMendDC, QUALITY_TIERS, BOON_SCALE, BANDS } from "./config.mjs";
+import { bandToQualityDelta, applyQualityDelta } from "./outcome.mjs";
 import { actorHasTool, TOOL_NAMES } from "./materials.mjs";
 import { validateActivityPrerequisites } from "./activity-setup.mjs";
 import { getAbilityBonus } from "./utils.mjs";
@@ -140,8 +140,18 @@ async function handleRequestRoll(payload) {
       return { ok: false, reason: "rollFailed" };
     }
 
-    const thresholds = { strongSuccess: getStrongSuccessDelta() };
-    const { band, quality } = resolveOutcome(total, confirmedDC, materialQuality, thresholds);
+    // Use Crucible's native critical success/failure on the Roll object.
+    // Crucible's StandardCheck defaults to ±6 from DC for critical thresholds.
+    const roll = message.rolls[0];
+
+    let band;
+    if (roll.isCriticalSuccess) band = BANDS.STRONG_SUCCESS;
+    else if (roll.isSuccess) band = BANDS.SUCCESS;
+    else if (roll.isCriticalFailure) band = BANDS.STRONG_FAILURE;
+    else band = BANDS.FAILURE;
+
+    const delta = bandToQualityDelta(band);
+    const quality = delta === null ? null : applyQualityDelta(materialQuality, delta);
 
     return { ok: true, total, band, quality };
   } catch (err) {
