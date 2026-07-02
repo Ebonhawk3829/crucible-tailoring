@@ -4,45 +4,72 @@ import { MODULE_ID, FLAGS, QUALITY_TIERS, getMaterialsPerCopper } from "./config
 // Cache the loaded seed data so we only fetch once.
 let _seedData = null;
 
-// World-level registry of registered material identifiers.
-// Key: system.identifier (fallback: name:type). Value: { representative: Item }.
-let _materialRegistry = null;
+// ---------------------------------------------------------------------------
+// Material type registry — persisted as a world setting, decoupled from
+// inventory items.  {"materialTypes": [{name, quality, img}]}
+// An actor "has" a material when any owned item's exact name matches a
+// registered type.  Tagging happens purely in settings — no flags on items.
+// ---------------------------------------------------------------------------
+
+/** Read the registered material type definitions from world settings. */
+export function getMaterialTypes() {
+  return game.settings.get(MODULE_ID, "materialTypes") ?? [];
+}
+
+/** Build a name→def lookup from the settings array for O(1) inventory scans. */
+function _nameIndex() {
+  return new Map(getMaterialTypes().map(t => [t.name, t]));
+}
+
+/** Register a material type by exact name. Idempotent on name. */
+export async function registerMaterialType({ name, quality, img }) {
+  const types = getMaterialTypes();
+  if (types.some(t => t.name === name)) return; // already registered
+  types.push({ name, quality: quality ?? "standard", img });
+  await game.settings.set(MODULE_ID, "materialTypes", types);
+}
+
+/** Remove one registered type by name. Touches no inventory items. */
+export async function clearMaterialType(name) {
+  const types = getMaterialTypes().filter(t => t.name !== name);
+  await game.settings.set(MODULE_ID, "materialTypes", types);
+}
+
+/** Remove all registered types. Touches no inventory items. */
+export async function clearAllMaterials() {
+  await game.settings.set(MODULE_ID, "materialTypes", []);
+}
 
 /**
- * Build (or rebuild) the world-level material type registry.
- * Scans all world items with the materialTag flag and groups by identifier.
- * Call once during init and after any clear/reimport that mutates tags.
- * @returns {Map<string, {representative: Item}>}
+ * Get all tailoring materials aggregated from an actor's inventory by
+ * registered material type (exact-name match).  Groups stacks by name,
+ * sums quantities.  No per-item flags required.
+ *
+ * @param {Actor} actor
+ * @returns {Array<{id: string, uuid: string, name: string, img: string, type: string, system: object, quantity: number}>}
  */
-function buildMaterialRegistry() {
-  const registry = new Map();
-  for (const item of game.items) {
-    if (!isMaterialTagged(item)) continue;
-    const key = _materialTypeKey(item);
-    if (!registry.has(key)) registry.set(key, { representative: item });
+export function getActorMaterials(actor) {
+  if (!actor) return [];
+  const byName = _nameIndex();
+  const groups = new Map();
+  for (const item of actor.items) {
+    const def = byName.get(item.name);
+    if (!def) continue; // not a registered material type
+    if (!groups.has(item.name)) {
+      groups.set(item.name, { representative: item, total: 0, def });
+    }
+    groups.get(item.name).total += item.system?.quantity ?? 1;
   }
-  _materialRegistry = registry;
-  return registry;
-}
-
-/**
- * Get the material type key for an item — identifier-first, name+type fallback.
- * @param {Item} item
- * @returns {string}
- */
-function _materialTypeKey(item) {
-  return item.system?.identifier || `${item.name}:${item.type}`;
-}
-
-/** @returns {Map<string, {representative: Item}>} */
-function getMaterialRegistry() {
-  if (!_materialRegistry) buildMaterialRegistry();
-  return _materialRegistry;
-}
-
-/** Invalidate the registry so it rebuilds on next access. */
-function invalidateMaterialRegistry() {
-  _materialRegistry = null;
+  return Array.from(groups.values()).map(({ representative, total, def }) => ({
+    id: representative.id,
+    uuid: representative.uuid,
+    name: representative.name,
+    img: representative.img ?? def.img,
+    type: representative.type,
+    quality: representative.system?.quality ?? def.quality,
+    system: representative.system,
+    quantity: total
+  }));
 }
 
 /**
@@ -294,104 +321,9 @@ export async function ensureSeedItems() {
   }
 }
 
-/**
- * Tag an item as tailoring-relevant by setting the material tag flag.
- * Used by the drag-from-compendium import panel.
- * Also registers it in the material type registry.
- * @param {Item} item - The item document to tag
- * @returns {Promise<void>}
- */
-export async function tagItemAsMaterial(item) {
-  await item.setFlag(MODULE_ID, FLAGS.materialTag, true);
-  invalidateMaterialRegistry();
-}
-
-/**
- * Remove the material tag from an item. Also invalidates the registry.
- * @param {Item} item
- * @returns {Promise<void>}
- */
-export async function untagMaterial(item) {
-  await item.setFlag(MODULE_ID, FLAGS.materialTag, false);
-  invalidateMaterialRegistry();
-}
-
-/**
- * Clear ALL material-tagged stacks matching a given type key from the world.
- * Untags every world item whose identifier or name+type matches.
- * @param {string} key - The material type key (identifier or name:type)
- * @returns {Promise<void>}
- */
-export async function clearMaterialType(key) {
-  const registry = getMaterialRegistry();
-  const entry = registry.get(key);
-  if (!entry) return;
-  // Find all world items that match this type key
-  for (const item of game.items) {
-    if (!isMaterialTagged(item)) continue;
-    if (_materialTypeKey(item) === key) {
-      await item.setFlag(MODULE_ID, FLAGS.materialTag, false);
-    }
-  }
-  invalidateMaterialRegistry();
-}
-
-/**
- * Clear all material tags from all items in the world.
- * @returns {Promise<void>}
- */
-export async function clearAllMaterials() {
-  for (const item of game.items) {
-    if (isMaterialTagged(item)) {
-      await item.setFlag(MODULE_ID, FLAGS.materialTag, false);
-    }
-  }
-  invalidateMaterialRegistry();
-}
-
-/**
- * Check if an item is tagged as a tailoring material.
- * @param {Item} item
- * @returns {boolean}
- */
-export function isMaterialTagged(item) {
-  return item.getFlag(MODULE_ID, FLAGS.materialTag) === true;
-}
-
-/**
- * Get all tailoring materials aggregated from an actor's inventory by material type.
- * Groups stacks by system.identifier (or name+type fallback), sums quantities.
- * Returns view-model objects with aggregated count, plus the representative
- * item's uuid for the craft flow.
- * @param {Actor} actor
- * @returns {Array<{id: string, uuid: string, name: string, img: string, type: string, system: object, quantity: number}>}
- */
-export function getActorMaterials(actor) {
-  if (!actor) return [];
-  const registry = getMaterialRegistry();
-  // Group actor-owned items by material type key.
-  // The registry is the sole source of truth — an actor "has" a material
-  // if their item's identifier matches a registered type, without requiring
-  // each individual stack to carry a flag.
-  const groups = new Map();
-  for (const item of actor.items) {
-    const key = _materialTypeKey(item);
-    if (!registry.has(key)) continue; // not a registered material type
-    if (!groups.has(key)) {
-      groups.set(key, { representative: item, total: 0 });
-    }
-    groups.get(key).total += item.system?.quantity ?? 1;
-  }
-  return Array.from(groups.values()).map(({ representative, total }) => ({
-    id: representative.id,
-    uuid: representative.uuid,
-    name: representative.name,
-    img: representative.img,
-    type: representative.type,
-    system: representative.system,
-    quantity: total
-  }));
-}
+// =========================================================================
+// Recipe tagging (unchanged — recipes are still flags on world items)
+// =========================================================================
 
 /**
  * Tag an item as a tailoring recipe (craftable product).

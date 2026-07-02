@@ -1,5 +1,5 @@
 // hub.mjs — TailoringHub ApplicationV2 (player-facing, read-only display)
-import { MODULE_ID, FLAGS } from "./config.mjs";
+import { MODULE_ID } from "./config.mjs";
 import { canOpenHub } from "./gating.mjs";
 import {
   getActorMaterials,
@@ -195,10 +195,10 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
       materials: materials.map(m => ({
         id: m.id,
         uuid: m.uuid,
-        materialKey: m.system?.identifier || `${m.name}:${m.type}`,
+        materialKey: m.name,
         name: m.name,
         img: m.img,
-        quality: m.system?.quality ?? "standard",
+        quality: m.quality ?? "standard",
         quantity: m.quantity
       })),
       tools,
@@ -740,18 +740,14 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
     const source = await fromUuid(data.uuid);
     if (!source) return;
 
-    const { tagItemAsMaterial } = await import("./materials.mjs");
-
-    // Ensure a world item exists to carry the material-type registration.
-    // Dragging from a compendium or actor inventory would otherwise tag a
-    // document that buildMaterialRegistry() never sees.
-    let worldItem = source;
-    if (source.pack || source.parent) {
-      worldItem = await Item.create(source.toObject());
-    }
-    await tagItemAsMaterial(worldItem);
+    const { registerMaterialType } = await import("./materials.mjs");
+    await registerMaterialType({
+      name: source.name,
+      quality: source.system?.quality ?? "standard",
+      img: source.img
+    });
     ui.notifications.info(
-      game.i18n.format("crucible-tailoring.hub.materialImported", { name: worldItem.name })
+      game.i18n.format("crucible-tailoring.hub.materialImported", { name: source.name })
     );
     this.render();
   }

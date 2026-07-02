@@ -11,7 +11,6 @@ export const QUERY_PROPOSE_OUTPUT = `${MODULE_ID}.proposeOutput`;
 export const FLAGS = {
   proposal: "proposal",
   compendiumKey: "compendiumKey",
-  materialTag: "materialTag",
   recipeTag: "recipeTag",
   role: "role",
   primary: "primary",
@@ -98,6 +97,14 @@ export function registerSettings() {
       default: cfg.default
     });
   }
+
+  // materialTypes — persisted array of {name, quality, img}, decoupled from inventory
+  game.settings.register(MODULE_ID, "materialTypes", {
+    scope: "world",
+    config: false,
+    type: Array,
+    default: []
+  });
 }
 
 /**

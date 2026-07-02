@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2-dev] — Prerelease
+
+### Changed
+- Material type registry decoupled from inventory — persisted as a world setting (`materialTypes` array of `{name, quality, img}`) instead of flags on world items
+- Material matching now uses exact name instead of `system.identifier` (avoids identifier-namespace poisoning from third-party modules)
+- Import drop handler registers a type definition via settings; no longer creates world `Item` documents, eliminating duplicate-item problem on clear/re-import
+- Clear operations (single/clear-all) edit the settings array directly, touching no inventory items
+- Removed dead `materialTag` flag, `tagItemAsMaterial`, `untagMaterial`, `isMaterialTagged`, and the `buildMaterialRegistry`/`getMaterialRegistry` scan infrastructure
+
 ## [0.3.1-dev] — Prerelease
 
 ### Fixed
