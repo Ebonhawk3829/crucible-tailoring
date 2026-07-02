@@ -382,16 +382,23 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
       }
 
       case "mend": {
-        // Select materials + party members
-        const selected = await this._selectMaterials(materials, 1, Infinity);
-        if (!selected) return;
+        // 1. Select party members FIRST (quantity depends on member count)
         const partyMembers = await this._selectPartyMembers();
         if (!partyMembers) return;
+
+        // 2. Then select materials with quantity — min 1 per member
+        const batch = await this._selectMaterialBatch(materials, {
+          minTotal: partyMembers.length,
+          hint: game.i18n.format("crucible-tailoring.flow.mendMaterialHint",
+            { count: partyMembers.length })
+        });
+        if (!batch) return;
+
         await runCraftFlow({
           actor: this.actor,
           activityId,
-          selectedMaterials: selected,
-          extra: { partyMembers }
+          selectedMaterials: batch.materials,
+          extra: { partyMembers, batchCount: batch.totalQuantity, batchSelections: batch.selections }
         });
         break;
       }
@@ -510,8 +517,10 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
    * @param {Array} materials - Available materials from getActorMaterials
    * @returns {Promise<object|null>} { materials, totalQuantity, selections } or null
    */
-  async _selectMaterialBatch(materials) {
+  async _selectMaterialBatch(materials, { minTotal = 1, hint } = {}) {
     if (materials.length === 0) return null;
+
+    const displayHint = hint ?? game.i18n.localize("crucible-tailoring.flow.batchHint");
 
     const content = `
       <div style="padding:0.5rem;">
@@ -527,7 +536,7 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
           `).join("")}
         </div>
         <p style="font-size:0.75rem;color:#666;">
-          ${game.i18n.localize("crucible-tailoring.flow.batchHint")}
+          ${displayHint}
         </p>
       </div>
     `;
@@ -560,8 +569,8 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     const totalQuantity = selections.reduce((sum, s) => sum + s.quantity, 0);
-    if (totalQuantity < 1) {
-      ui.notifications.warn(game.i18n.localize("crucible-tailoring.flow.noMaterialsSelected"));
+    if (totalQuantity < minTotal) {
+      ui.notifications.warn(game.i18n.format("crucible-tailoring.flow.insufficientBatch", { min: minTotal, actual: totalQuantity }));
       return null;
     }
 
@@ -638,15 +647,33 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
    * @returns {Promise<Actor[]|null>}
    */
   async _selectPartyMembers() {
-    const party = game.actors?.filter(a =>
-      a.type === "hero" && a.hasPlayerOwner
-    ) ?? [];
+    const groupActor = crucible.party;
+    if (!groupActor) {
+      ui.notifications.warn(game.i18n.localize("crucible-tailoring.flow.noParty"));
+      return null;
+    }
+
+    // Resolve members from the group actor (same approach as party-stash)
+    const memberArray = groupActor.system.members ?? [];
+    let members;
+    if (memberArray.actors) {
+      members = Array.from(memberArray.actors);
+    } else {
+      members = Array.from(memberArray)
+        .map(m => game.actors.get(m.actorId ?? m.id))
+        .filter(Boolean);
+    }
+
+    if (!members.length) {
+      ui.notifications.warn(game.i18n.localize("crucible-tailoring.flow.noPartyMembers"));
+      return null;
+    }
 
     const content = `
       <div style="padding:0.5rem;">
         <p>${game.i18n.localize("crucible-tailoring.flow.selectPartyMembers")}</p>
         <div>
-          ${party.map(a => `
+          ${members.map(a => `
             <label style="display:flex;align-items:center;gap:0.5rem;padding:0.25rem 0;cursor:pointer;">
               <input type="checkbox" value="${a.uuid}" class="party-checkbox" ${a.id === this.actor?.id ? "checked" : ""} />
               <img src="${a.img}" alt="${a.name}" style="width:24px;height:24px;object-fit:contain;border-radius:3px;" />

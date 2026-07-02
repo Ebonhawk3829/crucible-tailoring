@@ -31,6 +31,22 @@
       <div class="proposal-output-item">
         <img src="{{outputSpec.img}}" alt="{{outputSpec.name}}" />
         <span>{{outputSpec.name}}</span>
+        {{#if outputSpec.system.quantity}}
+        <span class="proposal-qty">x{{outputSpec.system.quantity}}</span>
+        {{/if}}
+      </div>
+      {{/if}}
+      {{#if mendTargets.length}}
+      <div class="proposal-mend-targets">
+        <h5>{{localize "crucible-tailoring.proposal.recipients"}}:</h5>
+        <ul class="proposal-item-list">
+          {{#each mendTargets}}
+          <li class="proposal-item">
+            <img src="{{img}}" alt="{{name}}" />
+            <span>{{name}}</span>
+          </li>
+          {{/each}}
+        </ul>
       </div>
       {{/if}}
     </div>

@@ -24,6 +24,15 @@ export async function postProposalCard(actor, payload) {
     if (item) inputItems.push({ name: item.name, img: item.img, uuid });
   }
 
+  // Resolve mend recipients for display
+  const mendTargets = [];
+  if (payload.outputSpec?._tailoring?.partyMemberUuids) {
+    for (const uuid of payload.outputSpec._tailoring.partyMemberUuids) {
+      const member = await fromUuid(uuid);
+      if (member) mendTargets.push({ name: member.name, img: member.img });
+    }
+  }
+
   const content = await renderTemplate(
     "modules/crucible-tailoring/templates/proposal-card.hbs",
     {
@@ -34,6 +43,7 @@ export async function postProposalCard(actor, payload) {
       quality: payload.quality,
       inputItems,
       outputSpec: payload.outputSpec,
+      mendTargets,
       i18n: (key) => game.i18n.localize(key)
     }
   );
@@ -162,7 +172,7 @@ export async function confirmProposal(message) {
       }
     }
   } else if (outputSpec?.type) {
-    // Standard item creation: Craft Equipment, Trade Goods, Mend, Disguise
+    // Standard item creation — Craft Equipment, Trade Goods, Disguise
     const itemData = {
       name: outputSpec.name ?? "Crafted Item",
       type: outputSpec.type,
@@ -171,30 +181,76 @@ export async function confirmProposal(message) {
     };
 
     // Apply quality if specified
-    if (outputSpec.quality && QUALITY_TIERS.includes(outputSpec.quality)) {
-      itemData.system.quality = outputSpec.quality;
+    if (proposal.quality && QUALITY_TIERS.includes(proposal.quality)) {
+      itemData.system.quality = proposal.quality;
     }
 
-    const created = await actor.createEmbeddedDocuments("Item", [itemData]);
-    if (created?.length) {
-      // Set tailoring flags on the created item
-      const flagUpdates = {};
-      if (outputSpec._tailoring) {
-        for (const [key, value] of Object.entries(outputSpec._tailoring)) {
-          flagUpdates[`flags.${MODULE_ID}.${key}`] = value;
+    // Mend: create one consumable on EACH targeted party member
+    if (activityId === "mend" && outputSpec._tailoring?.partyMemberUuids?.length) {
+      const memberUuids = outputSpec._tailoring.partyMemberUuids;
+      const boonScale = outputSpec._tailoring?.boonScale ?? {};
+      const boonCount = boonScale[itemData.system.quality ?? proposal.quality] ?? 0;
+
+      let deliveredCount = 0;
+      for (const memberUuid of memberUuids) {
+        const member = await fromUuid(memberUuid);
+        if (!member) {
+          console.warn(`crucible-tailoring | Mend target not found: ${memberUuid}`);
+          continue;
         }
-      }
-      if (Object.keys(flagUpdates).length > 0) {
-        await created[0].update(flagUpdates);
+
+        const created = await member.createEmbeddedDocuments("Item",
+          [foundry.utils.deepClone(itemData)]);
+        if (!created?.length) continue;
+
+        // Set tailoring flags on the created item
+        const flagUpdates = {};
+        if (outputSpec._tailoring) {
+          for (const [key, value] of Object.entries(outputSpec._tailoring)) {
+            flagUpdates[`flags.${MODULE_ID}.${key}`] = value;
+          }
+        }
+        if (boonCount > 0) {
+          flagUpdates[`flags.${MODULE_ID}.mendBoonCount`] = boonCount;
+          flagUpdates[`flags.${MODULE_ID}.mendPartyUuids`] = memberUuids;
+        }
+        if (Object.keys(flagUpdates).length > 0) {
+          await created[0].update(flagUpdates);
+        }
+
+        deliveredCount++;
+        console.log(`crucible-tailoring | Delivered Mended Presentation to ${member.name}`);
       }
 
-      // For Mend consumables, also create the ActiveEffect template on the item
-      // so that when used, it knows what AE to apply.
-      if (activityId === "mend" && outputSpec._tailoring?.useEffect === "applyMendBoons") {
-        const boonCount = outputSpec._tailoring?.boonScale?.[outputSpec.quality] ?? 0;
-        if (boonCount > 0) {
-          await created[0].setFlag(MODULE_ID, "mendBoonCount", boonCount);
-          await created[0].setFlag(MODULE_ID, "mendPartyUuids", outputSpec._tailoring?.partyMemberUuids ?? []);
+      if (deliveredCount === 0) {
+        ui.notifications.error(
+          game.i18n.localize("crucible-tailoring.confirm.noMembersReachable")
+        );
+        return;
+      }
+    } else {
+      // Standard single-item creation
+      const created = await actor.createEmbeddedDocuments("Item", [itemData]);
+      if (created?.length) {
+        // Set tailoring flags on the created item
+        const flagUpdates = {};
+        if (outputSpec._tailoring) {
+          for (const [key, value] of Object.entries(outputSpec._tailoring)) {
+            flagUpdates[`flags.${MODULE_ID}.${key}`] = value;
+          }
+        }
+        if (Object.keys(flagUpdates).length > 0) {
+          await created[0].update(flagUpdates);
+        }
+
+        // For Mend consumables, also create the ActiveEffect template on the item
+        // so that when used, it knows what AE to apply.
+        if (activityId === "mend" && outputSpec._tailoring?.useEffect === "applyMendBoons") {
+          const boonCount = outputSpec._tailoring?.boonScale?.[outputSpec.quality] ?? 0;
+          if (boonCount > 0) {
+            await created[0].setFlag(MODULE_ID, "mendBoonCount", boonCount);
+            await created[0].setFlag(MODULE_ID, "mendPartyUuids", outputSpec._tailoring?.partyMemberUuids ?? []);
+          }
         }
       }
     }

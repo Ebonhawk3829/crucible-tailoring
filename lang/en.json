@@ -64,6 +64,7 @@
       "crafter": "Crafter",
       "inputs": "Consuming",
       "output": "Producing",
+      "recipients": "Recipients",
       "confirm": "Confirm",
       "gmOnly": "GM only"
     },
@@ -74,7 +75,8 @@
       "inputsChanged": "The actor no longer holds the claimed inputs. Inventory may have changed.",
       "notAnAffix": "The dragged document is not a valid Crucible affix.",
       "confirmed": "Confirmed",
-      "success": "Tailoring proposal confirmed and applied."
+      "success": "Tailoring proposal confirmed and applied.",
+      "noMembersReachable": "None of the targeted party members could be reached to deliver the Mend items."
     },
     "query": {
       "noGM": "No GM available to process tailoring. Try again when a GM is online.",
@@ -94,6 +96,7 @@
       "quality": "Quality",
       "nothing": "Nothing (materials ruined)",
       "strongFailureWarning": "Strong failure: materials will be consumed but nothing will be produced.",
+      "recipients": "Delivered to {count} party member(s)",
       "approve": "Approve & Send to GM",
       "cancel": "Cancel"
     },
@@ -131,7 +134,11 @@
       "selectBatchMaterials": "Select how many units of each material to use:",
       "selectBatchTitle": "Select Batch Materials",
       "batchHint": "Each unit of material produces one batch of trade goods. Quality of the output is determined by the crafting roll.",
-      "noMaterialsSelected": "No materials selected. Choose at least one unit to proceed."
+      "mendMaterialHint": "Select at least {count} units of material — one per party member being mended.",
+      "insufficientBatch": "You must select at least {min} units. You selected {actual}.",
+      "noMaterialsSelected": "No materials selected. Choose at least one unit to proceed.",
+      "noParty": "No party is configured. Set up a party in Crucible first.",
+      "noPartyMembers": "The party has no members."
     },
     "mend": {
       "noBoons": "This mending has no boons to apply (shoddy quality).",

@@ -80,7 +80,9 @@ export function getActorMaterials(actor) {
     name: representative.name,
     img: representative.img ?? def.img,
     type: representative.type,
-    quality: representative.system?.quality ?? def.quality,
+    quality: inferQualityFromName(representative.name)
+      ?? representative.system?.quality
+      ?? def.quality,
     system: representative.system,
     quantity: total
   }));

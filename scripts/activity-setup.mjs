@@ -3,7 +3,7 @@
 // These functions run on the PLAYER's client before the GM pings.
 
 import { MODULE_ID, FLAGS, getMaterialDC, getMendDC } from "./config.mjs";
-import { actorHasTool, TOOL_NAMES } from "./materials.mjs";
+import { actorHasTool, TOOL_NAMES, inferQualityFromName } from "./materials.mjs";
 
 /**
  * Activity definition registry.
@@ -23,7 +23,9 @@ export const ACTIVITY_DEFS = {
      */
     assemblePayload(actor, selectedMaterials, extra = {}) {
       if (!selectedMaterials?.length) return null;
-      const materialQuality = selectedMaterials[0].system?.quality ?? "standard";
+      const materialQuality = inferQualityFromName(selectedMaterials[0].name)
+        ?? selectedMaterials[0].system?.quality
+        ?? "standard";
       const dc = getMaterialDC(materialQuality);
       // Build per-material quantity map from batch selections
       const materialQuantities = {};
@@ -79,7 +81,9 @@ export const ACTIVITY_DEFS = {
 
     assemblePayload(actor, selectedMaterials, extra = {}) {
       if (!selectedMaterials?.length || !extra.outputItem) return null;
-      const materialQuality = selectedMaterials[0].system?.quality ?? "standard";
+      const materialQuality = inferQualityFromName(selectedMaterials[0].name)
+        ?? selectedMaterials[0].system?.quality
+        ?? "standard";
       const dc = getMaterialDC(materialQuality);
       // outputItem is always a real Foundry Item (from getRegisteredRecipes or recipe drop zone)
       const outputItemId = extra.outputItem.uuid;
@@ -120,9 +124,18 @@ export const ACTIVITY_DEFS = {
 
     assemblePayload(actor, selectedMaterials, extra = {}) {
       if (!selectedMaterials?.length) return null;
-      const materialQuality = selectedMaterials[0].system?.quality ?? "standard";
+      const materialQuality = inferQualityFromName(selectedMaterials[0].name)
+        ?? selectedMaterials[0].system?.quality
+        ?? "standard";
       const dc = getMendDC();
       const partyMembers = extra.partyMembers ?? [actor];
+      // Build per-material quantity map from batch selections
+      const materialQuantities = {};
+      if (extra.batchSelections) {
+        for (const s of extra.batchSelections) {
+          materialQuantities[s.material.uuid] = s.quantity;
+        }
+      }
       return {
         actorUuid: actor.uuid,
         activityId: "mend",
@@ -130,7 +143,8 @@ export const ACTIVITY_DEFS = {
         dc,
         inputUuids: selectedMaterials.map(m => m.uuid),
         partyMemberUuids: partyMembers.map(a => a.uuid),
-        partyCount: partyMembers.length
+        partyCount: partyMembers.length,
+        materialQuantities
       };
     },
 
@@ -173,7 +187,9 @@ export const ACTIVITY_DEFS = {
 
     assemblePayload(actor, selectedMaterials, extra = {}) {
       if (!selectedMaterials?.length) return null;
-      const materialQuality = selectedMaterials[0].system?.quality ?? "standard";
+      const materialQuality = inferQualityFromName(selectedMaterials[0].name)
+        ?? selectedMaterials[0].system?.quality
+        ?? "standard";
       const dc = getMaterialDC(materialQuality);
       return {
         actorUuid: actor.uuid,

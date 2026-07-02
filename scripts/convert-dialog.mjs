@@ -32,6 +32,14 @@ export async function openConvertDialog({ actor, activityId, band, quality, inpu
     ? `<div><img src="${outputSpec.img}" alt="${foundry.utils.escapeHTML(outputSpec.name)}" style="width:24px;height:24px;vertical-align:middle;" /> ${foundry.utils.escapeHTML(outputSpec.name)}</div>`
     : "";
 
+  // Show mend recipients in the convert dialog
+  let recipientDisplay = "";
+  const partyMemberUuids = outputSpec?._tailoring?.partyMemberUuids;
+  if (partyMemberUuids?.length) {
+    const recipients = partyMemberUuids.length;
+    recipientDisplay = `<p style="font-size:0.85rem;color:#666;">${game.i18n.format("crucible-tailoring.convert.recipients", { count: recipients })}</p>`;
+  }
+
   const content = `
     <div style="padding:0.5rem;">
       <h3>${activityLabel} — ${bandLabel}</h3>
@@ -45,6 +53,7 @@ export async function openConvertDialog({ actor, activityId, band, quality, inpu
           <h4>${game.i18n.localize("crucible-tailoring.convert.producing")}</h4>
           <p>${game.i18n.localize("crucible-tailoring.convert.quality")}: ${qualityDisplay}</p>
           ${outputDisplay}
+          ${recipientDisplay}
         </div>
       </div>
       ${!quality ? `<p style="color:#c00;">${game.i18n.localize("crucible-tailoring.convert.strongFailureWarning")}</p>` : ""}

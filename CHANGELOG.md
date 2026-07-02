@@ -5,28 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.5-dev] — Prerelease
+
+### Added
+- Mend creates one consumable on each targeted party member instead of a single item on the crafter
+- Proposal card and convert dialog show mend recipients
+
+### Changed
+- Mend flow reordered — party members selected first, then materials (quantity scales with member count)
+- `_selectMaterialBatch` now accepts `{minTotal, hint}` options, shared by Trade Goods and Mend
+- Party member selection uses `crucible.party` (group actor) instead of scanning all world actors
+- All `assemblePayload` quality reads prefer inferred-from-name quality over item data
+- `getActorMaterials` quality now infers from item name first, falling back to item data then registry
+
+### Fixed
+- Quality badge now reads from item name for all paths (hub display, payload assembly)
+
 ## [0.3.4-dev] — Prerelease
 
 ### Added
-- Craft Trade Goods now has a per-material batch quantity selector — pick how many units from each stack
-- Hub auto-refreshes when actor inventory changes (hooks on create/update/delete Item)
+- Craft Trade Goods now has a per-material batch quantity selector 
+- Hub auto-refreshes when actor inventory changes 
 
 ### Changed
 - Material and recipe import drop zones moved to a dedicated Import & Registration section at the bottom of the hub
-- Merged DC labels — if two quality tiers share a DC, the dropdown shows concatenated label (e.g. "Shoddy / Standard Material")
+- Merged DC labels  if two quality tiers share a DC,
 
 ### Fixed
-- `Set.includes` → `Set.has` in chat.mjs fallback consume path — Crucible's properties field is a Set, not an Array
-- Trade Goods base price corrected from 50 to 12 copper (was showing 5 silver instead of 1 silver 2 copper)
+- `Set.includes` → `Set.has` in chat.mjs fallback consume path 
+- Trade Goods base price corrected
 
 ## [0.3.3-dev] — Prerelease
 
 ### Added
-- GM configuration dialog before roll dispatch — GM sees suggested DC from module settings, can override before requesting roll
+- GM configuration dialog before roll dispatch 
 
 ### Fixed
-- Material quality now inferred from item name when importing (e.g. "Shoddy Tailoring Ingredient" → shoddy)
-- Roll total extraction fixed — `check.request()` return is a serialized ChatMessage; now looks up the real message in `game.messages`
+- Material quality now inferred from item name when importing
+- Roll total extraction fixed 
 
 ## [0.3.2-dev] — Prerelease
 
