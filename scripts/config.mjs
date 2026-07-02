@@ -61,10 +61,10 @@ export const BOON_SCALE = { shoddy: 0, standard: 1, fine: 2, superior: 3, master
 
 // Success bands
 export const BANDS = {
-  STRONG_SUCCESS: "strongSuccess",
+  CRITICAL_SUCCESS: "criticalSuccess",
   SUCCESS: "success",
   FAILURE: "failure",
-  STRONG_FAILURE: "strongFailure"
+  CRITICAL_FAILURE: "criticalFailure"
 };
 
 /**

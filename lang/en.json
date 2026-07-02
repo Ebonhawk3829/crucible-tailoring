@@ -54,10 +54,10 @@
       }
     },
     "band": {
-      "strongSuccess": "Strong Success",
+      "criticalSuccess": "Critical Success",
       "success": "Success",
       "failure": "Failure",
-      "strongFailure": "Strong Failure"
+      "criticalFailure": "Critical Failure"
     },
     "proposal": {
       "title": "Tailoring Proposal",
@@ -95,7 +95,7 @@
       "producing": "Producing",
       "quality": "Quality",
       "nothing": "Nothing (materials ruined)",
-      "strongFailureWarning": "Strong failure: materials will be consumed but nothing will be produced.",
+      "criticalFailureWarning": "Critical failure: materials will be consumed but nothing will be produced.",
       "recipients": "Delivered to {count} party member(s)",
       "approve": "Approve & Send to GM",
       "cancel": "Cancel"

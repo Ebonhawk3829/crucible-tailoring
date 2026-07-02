@@ -145,9 +145,9 @@ async function handleRequestRoll(payload) {
     const roll = message.rolls[0];
 
     let band;
-    if (roll.isCriticalSuccess) band = BANDS.STRONG_SUCCESS;
+    if (roll.isCriticalSuccess) band = BANDS.CRITICAL_SUCCESS;
     else if (roll.isSuccess) band = BANDS.SUCCESS;
-    else if (roll.isCriticalFailure) band = BANDS.STRONG_FAILURE;
+    else if (roll.isCriticalFailure) band = BANDS.CRITICAL_FAILURE;
     else band = BANDS.FAILURE;
 
     const delta = bandToQualityDelta(band);

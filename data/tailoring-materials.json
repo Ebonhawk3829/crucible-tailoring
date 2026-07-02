@@ -202,9 +202,23 @@
           "quality": "standard",
           "price": 80,
           "weight": 8,
+          "properties": [],
           "description": {
             "public": "<p>A complete costume designed to help the wearer pass as someone they are not. Includes appropriate clothing, accessories, and details for the intended role.</p><p><strong>Context:</strong> {{context}}</p><p><strong>Boons:</strong> +{{boonCount}} to Deception checks to maintain this cover.</p>"
-          }
+          },
+          "actions": [
+            {
+              "id": "disguiseSocialEquip",
+              "name": "Equip Social Disguise",
+              "img": "modules/crucible-tailoring/assets/icons/disguise-social.webp",
+              "description": "<p>Don this social disguise to pass as someone you are not.</p>",
+              "tags": ["equip"],
+              "cost": { "action": 1, "focus": 0, "heroism": 0 },
+              "target": { "type": "self", "number": 1, "scope": 1 },
+              "range": {},
+              "effects": []
+            }
+          ]
         },
         "_tailoring": {
           "seedAction": "create",
@@ -225,9 +239,23 @@
           "quality": "standard",
           "price": 80,
           "weight": 8,
+          "properties": [],
           "description": {
             "public": "<p>Camouflage coverings tailored to blend into a specific terrain. Includes coloured cloth wraps, netting, and material treated to match the target environment.</p><p><strong>Terrain:</strong> {{context}}</p><p><strong>Boons:</strong> +{{boonCount}} to Stealth checks in this terrain.</p>"
-          }
+          },
+          "actions": [
+            {
+              "id": "disguiseEnvironEquip",
+              "name": "Equip Environmental Disguise",
+              "img": "modules/crucible-tailoring/assets/icons/disguise-environmental.webp",
+              "description": "<p>Don this camouflage to blend into the target terrain.</p>",
+              "tags": ["equip"],
+              "cost": { "action": 1, "focus": 0, "heroism": 0 },
+              "target": { "type": "self", "number": 1, "scope": 1 },
+              "range": {},
+              "effects": []
+            }
+          ]
         },
         "_tailoring": {
           "seedAction": "create",
@@ -254,9 +282,23 @@
         "price": 0,
         "weight": 0,
         "quantity": 1,
+        "properties": [],
         "description": {
           "public": "<p>The party's clothing and travel gear has been expertly mended, pressed, and presented. Everyone looks put-together rather than road-worn — cleaner, sharper, more credible in social situations.</p><p><strong>Quality:</strong> {{materialQuality}}</p><p><strong>Boons:</strong> +{{boonCount}} to social skill checks (Deception, Diplomacy, Intimidation, Performance) where appearance and presentation matter.</p><p><strong>Duration:</strong> Lasts until the party takes a rest.</p><p><em>Use this item to apply the boon to yourself.</em></p>"
-        }
+        },
+        "actions": [
+          {
+            "id": "mendConsumable0000",
+            "name": "Apply Mended Presentation",
+            "img": "modules/crucible-tailoring/assets/icons/mend-consumable.webp",
+            "description": "<p>Apply the mend boon to yourself, granting a bonus to social skill checks where appearance matters.</p>",
+            "tags": ["consumable"],
+            "cost": { "action": 1, "focus": 0, "heroism": 0 },
+            "target": { "type": "self", "number": 1, "scope": 1 },
+            "range": {},
+            "effects": []
+          }
+        ]
       },
       "_tailoring": {
         "seedAction": "create",

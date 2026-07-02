@@ -12,10 +12,10 @@
 // Minimal inline duplicates of config constants so this file has no imports.
 // ---------------------------------------------------------------------------
 const BANDS = {
-  STRONG_SUCCESS: "strongSuccess",
+  CRITICAL_SUCCESS: "criticalSuccess",
   SUCCESS: "success",
   FAILURE: "failure",
-  STRONG_FAILURE: "strongFailure"
+  CRITICAL_FAILURE: "criticalFailure"
 };
 
 const QUALITY_TIERS = ["shoddy", "standard", "fine", "superior", "masterwork"];
@@ -25,10 +25,10 @@ const QUALITY_TIERS = ["shoddy", "standard", "fine", "superior", "masterwork"];
 // ---------------------------------------------------------------------------
 function bandToQualityDelta(band) {
   switch (band) {
-    case BANDS.STRONG_SUCCESS: return 1;
+    case BANDS.CRITICAL_SUCCESS: return 1;
     case BANDS.SUCCESS: return 0;
     case BANDS.FAILURE: return -1;
-    case BANDS.STRONG_FAILURE: return null;
+    case BANDS.CRITICAL_FAILURE: return null;
     default: return null;
   }
 }
@@ -65,10 +65,10 @@ function assertEqual(actual, expected, label) {
 }
 
 // --- bandToQualityDelta ---
-assertEqual(bandToQualityDelta(BANDS.STRONG_SUCCESS), 1, "strongSuccess → +1");
+assertEqual(bandToQualityDelta(BANDS.CRITICAL_SUCCESS), 1, "criticalSuccess → +1");
 assertEqual(bandToQualityDelta(BANDS.SUCCESS), 0, "success → 0");
 assertEqual(bandToQualityDelta(BANDS.FAILURE), -1, "failure → -1");
-assertEqual(bandToQualityDelta(BANDS.STRONG_FAILURE), null, "strongFailure → null");
+assertEqual(bandToQualityDelta(BANDS.CRITICAL_FAILURE), null, "criticalFailure → null");
 assertEqual(bandToQualityDelta("bogus"), null, "unknown band → null");
 
 // --- applyQualityDelta ---

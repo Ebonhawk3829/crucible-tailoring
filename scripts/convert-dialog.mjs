@@ -10,7 +10,7 @@ const { DialogV2 } = foundry.applications.api;
  * @param {Actor} params.actor - The crafting actor
  * @param {string} params.activityId - The activity being performed
  * @param {string} params.band - The success band
- * @param {string|null} params.quality - The output quality (null on strong failure)
+ * @param {string|null} params.quality - The output quality (null on critical failure)
  * @param {Array<{uuid: string, name: string, img: string}>} params.inputs - Input items
  * @param {object} params.outputSpec - What will be produced
  * @returns {Promise<boolean>} True if the player approved, false if cancelled
@@ -68,7 +68,7 @@ export async function openConvertDialog({ actor, activityId, band, quality, inpu
           ${recipientDisplay}
         </div>
       </div>
-      ${!quality ? `<p style="color:#c00;">${game.i18n.localize("crucible-tailoring.convert.strongFailureWarning")}</p>` : ""}
+      ${!quality ? `<p style="color:#c00;">${game.i18n.localize("crucible-tailoring.convert.criticalFailureWarning")}</p>` : ""}
     </div>
   `;
 

@@ -514,6 +514,7 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
         title: game.i18n.localize("crucible-tailoring.flow.mendAssignmentTitle"),
         icon: "fa-paint-brush"
       },
+      classes: ["crucible-tailoring"],
       content,
       render: (event, dialog) => {
         // dialog is the DialogV2 instance in v14; get the DOM element from it
@@ -607,6 +608,7 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
     let checkedIds = [];
     const result = await DialogV2.wait({
       window: { title: game.i18n.localize("crucible-tailoring.flow.selectMaterialsTitle"), icon: "fa-boxes" },
+      classes: ["crucible-tailoring"],
       content,
       buttons: [{
         action: "ok",
@@ -668,6 +670,7 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
     let selections = [];
     const result = await DialogV2.wait({
       window: { title: game.i18n.localize("crucible-tailoring.flow.selectBatchTitle"), icon: "fa-boxes" },
+      classes: ["crucible-tailoring"],
       content,
       buttons: [{
         action: "ok",
@@ -746,6 +749,7 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
     let selectedUuid = null;
     const result = await DialogV2.wait({
       window: { title: game.i18n.localize("crucible-tailoring.flow.selectOutputTitle"), icon: "fa-hammer" },
+      classes: ["crucible-tailoring"],
       content,
       buttons: [{
         action: "ok",
@@ -797,6 +801,7 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
     let context = "";
     const result = await DialogV2.wait({
       window: { title: game.i18n.localize("crucible-tailoring.flow.selectDisguiseTitle"), icon: "fa-mask" },
+      classes: ["crucible-tailoring"],
       content,
       buttons: [{
         action: "ok",
@@ -856,6 +861,7 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
     let selectedId = null;
     const result = await DialogV2.wait({
       window: { title: game.i18n.localize("crucible-tailoring.flow.selectSourceItemTitle"), icon: "fa-wrench" },
+      classes: ["crucible-tailoring"],
       content,
       buttons: [{
         action: "ok",

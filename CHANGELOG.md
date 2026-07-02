@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.4-dev] — Prerelease
+
+### Fixed
+- Mend consumable had no "Use" button — added the missing action definition
+- Disguises had no equip action — added equip action to both social and environmental templates
+- Radio buttons invisible in all selection dialogs, not just the mend grid — module styles now apply to every dialog window
+- Module CSS not reaching standalone dialog windows — all dialogs now carry the module class
+
+### Changed
+- "Strong Success" and "Strong Failure" renamed to "Critical Success" and "Critical Failure" to match Crucible's terminology
+
 ## [0.4.3-dev] — Prerelease
 
 ### Fixed

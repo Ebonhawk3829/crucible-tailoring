@@ -9,20 +9,20 @@ import { BANDS, QUALITY_TIERS } from "./config.mjs";
 /**
  * Map a success band to a quality tier delta.
  *
- * strongSuccess  → +1 (output one tier higher than materials)
- * success        →  0 (output matches material quality)
- * failure        → -1 (output one tier lower, floor shoddy)
- * strongFailure  → null (materials ruined, nothing produced)
+ * criticalSuccess  → +1 (output one tier higher than materials)
+ * success          →  0 (output matches material quality)
+ * failure          → -1 (output one tier lower, floor shoddy)
+ * criticalFailure  → null (materials ruined, nothing produced)
  *
  * @param {string} band - One of BANDS.*
  * @returns {number|null} Quality tier delta, or null for "produce nothing"
  */
 export function bandToQualityDelta(band) {
   switch (band) {
-    case BANDS.STRONG_SUCCESS: return 1;
+    case BANDS.CRITICAL_SUCCESS: return 1;
     case BANDS.SUCCESS: return 0;
     case BANDS.FAILURE: return -1;
-    case BANDS.STRONG_FAILURE: return null;
+    case BANDS.CRITICAL_FAILURE: return null;
     default: return null;
   }
 }

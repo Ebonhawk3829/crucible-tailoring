@@ -152,9 +152,21 @@ export const ACTIVITY_DEFS = {
           price: 0,
           weight: 0,
           quantity: 1,
+          properties: [],
           description: {
             public: `<p>The party's clothing and travel gear has been expertly mended, pressed, and presented.</p><p><strong>Quality:</strong> ${quality}</p><p><strong>Boons:</strong> +${boonCount} to social skill checks where appearance matters.</p><p><strong>Duration:</strong> Lasts until the party takes a rest.</p><p><em>Use this item to apply the boon to yourself.</em></p>`
-          }
+          },
+          actions: [{
+            id: "mendConsumable0000",
+            name: "Apply Mended Presentation",
+            img: "modules/crucible-tailoring/assets/icons/mend-consumable.webp",
+            description: "<p>Apply the mend boon to yourself, granting a bonus to social skill checks where appearance matters.</p>",
+            tags: ["consumable"],
+            cost: { action: 1, focus: 0, heroism: 0 },
+            target: { type: "self", number: 1, scope: 1 },
+            range: {},
+            effects: []
+          }]
         },
         _tailoring: {
           role: "consumable",
@@ -209,11 +221,27 @@ export const ACTIVITY_DEFS = {
           quality: quality ?? "standard",
           price: 80,
           weight: 8,
+          properties: [],
           description: {
             public: isSocial
               ? `<p>A complete costume designed to help the wearer pass as someone they are not.</p><p><strong>Context:</strong> ${contextLabel}</p><p><strong>Boons:</strong> +${boonCount} to Deception checks to maintain this cover.</p>`
               : `<p>Camouflage coverings tailored to blend into a specific terrain.</p><p><strong>Terrain:</strong> ${contextLabel}</p><p><strong>Boons:</strong> +${boonCount} to Stealth checks in this terrain.</p>`
-          }
+          },
+          actions: [{
+            id: isSocial ? "disguiseSocialEquip" : "disguiseEnvironEquip",
+            name: isSocial ? "Equip Social Disguise" : "Equip Environmental Disguise",
+            img: isSocial
+              ? "modules/crucible-tailoring/assets/icons/disguise-social.webp"
+              : "modules/crucible-tailoring/assets/icons/disguise-environmental.webp",
+            description: isSocial
+              ? "<p>Don this social disguise to pass as someone you are not.</p>"
+              : "<p>Don this camouflage to blend into the target terrain.</p>",
+            tags: ["equip"],
+            cost: { action: 1, focus: 0, heroism: 0 },
+            target: { type: "self", number: 1, scope: 1 },
+            range: {},
+            effects: []
+          }]
         },
         _tailoring: {
           role: "disguise",
