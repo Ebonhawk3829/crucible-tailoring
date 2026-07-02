@@ -5,10 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.2-dev] — Prerelease
+## [0.4.3-dev] — Prerelease
 
 ### Fixed
 - Mend assignment dialog render callback now reads from the DialogV2 instance
+- Radio buttons invisible in mend assignment grid until checked
+- Proposal card layout squeezed and wrapping awkwardly in narrow chat sidebar
 
 ## [0.4.1-dev] — Prerelease
 
