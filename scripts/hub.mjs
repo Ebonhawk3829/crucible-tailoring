@@ -515,29 +515,29 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
         icon: "fa-paint-brush"
       },
       content,
-      render: (event, html) => {
-        // html is a jQuery object in Foundry v14 DialogV2.render
-        // Attach reactive logic: when a radio changes, recompute remaining
-        // inventory and disable radios that would exceed it.
-        const $radios = html.find(".mend-radio");
+      render: (event, dialog) => {
+        // dialog is the DialogV2 instance in v14; get the DOM element from it
+        const el = dialog.element;
+        const radios = el.querySelectorAll(".mend-radio");
         const recompute = () => {
           // Count current selections per quality
           const used = {};
           for (const q of availableQualities) used[q] = 0;
-          $radios.each((_, r) => { if (r.checked) used[r.dataset.quality]++; });
+          radios.forEach(r => { if (r.checked) used[r.dataset.quality]++; });
           // Update availability displays and disable overbudget radios
           for (const q of availableQualities) {
             const remaining = qualityInventory[q] - used[q];
-            html.find(`.mend-avail[data-quality="${q}"]`).text(`(${remaining} left)`);
+            const availEl = el.querySelector(`.mend-avail[data-quality="${q}"]`);
+            if (availEl) availEl.textContent = `(${remaining} left)`;
             // Disable unchecked radios in this column if no remaining
-            $radios.each((_, r) => {
+            radios.forEach(r => {
               if (r.dataset.quality === q && !r.checked) {
                 r.disabled = remaining <= 0;
               }
             });
           }
         };
-        $radios.on("change", recompute);
+        radios.forEach(r => r.addEventListener("change", recompute));
         recompute(); // initial pass
       },
       buttons: [{
