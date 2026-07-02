@@ -516,30 +516,28 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
       },
       content,
       render: (event, html) => {
+        // html is a jQuery object in Foundry v14 DialogV2.render
         // Attach reactive logic: when a radio changes, recompute remaining
         // inventory and disable radios that would exceed it.
-        const radios = html.querySelectorAll(".mend-radio");
+        const $radios = html.find(".mend-radio");
         const recompute = () => {
           // Count current selections per quality
           const used = {};
           for (const q of availableQualities) used[q] = 0;
-          for (const r of radios) {
-            if (r.checked) used[r.dataset.quality]++;
-          }
+          $radios.each((_, r) => { if (r.checked) used[r.dataset.quality]++; });
           // Update availability displays and disable overbudget radios
           for (const q of availableQualities) {
             const remaining = qualityInventory[q] - used[q];
-            const label = html.querySelector(`.mend-avail[data-quality="${q}"]`);
-            if (label) label.textContent = `(${remaining} left)`;
+            html.find(`.mend-avail[data-quality="${q}"]`).text(`(${remaining} left)`);
             // Disable unchecked radios in this column if no remaining
-            for (const r of radios) {
+            $radios.each((_, r) => {
               if (r.dataset.quality === q && !r.checked) {
                 r.disabled = remaining <= 0;
               }
-            }
+            });
           }
         };
-        for (const r of radios) r.addEventListener("change", recompute);
+        $radios.on("change", recompute);
         recompute(); // initial pass
       },
       buttons: [{

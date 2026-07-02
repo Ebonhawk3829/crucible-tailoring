@@ -196,7 +196,7 @@
       {
         "type": "armor",
         "name": "Social Disguise",
-        "img": "icons/equipment/chest/robe-layered-blue.webp",
+        "img": "modules/crucible-tailoring/assets/icons/disguise-social.webp",
         "system": {
           "category": "unarmored",
           "quality": "standard",
@@ -219,7 +219,7 @@
       {
         "type": "armor",
         "name": "Environmental Disguise",
-        "img": "icons/equipment/chest/robe-layered-green.webp",
+        "img": "modules/crucible-tailoring/assets/icons/disguise-environmental.webp",
         "system": {
           "category": "unarmored",
           "quality": "standard",
@@ -247,7 +247,7 @@
     "mend": {
       "type": "consumable",
       "name": "Mended Presentation",
-      "img": "icons/commodities/cloth/cloth-thread-needle.webp",
+      "img": "modules/crucible-tailoring/assets/icons/mend-consumable.webp",
       "system": {
         "category": "other",
         "quality": "standard",
