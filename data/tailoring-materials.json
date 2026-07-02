@@ -255,7 +255,7 @@
         "weight": 0,
         "quantity": 1,
         "description": {
-          "public": "<p>The party's clothing and travel gear has been expertly mended, pressed, and presented. Everyone looks put-together rather than road-worn — cleaner, sharper, more credible in social situations.</p><p><strong>Quality:</strong> {{materialQuality}}</p><p><strong>Boons:</strong> +{{boonCount}} to social skill checks (Diplomacy, Deception, Intimidation, Persuasion, Society) where appearance and presentation matter.</p><p><strong>Duration:</strong> Lasts until the party takes a rest.</p><p><em>Use this item to apply the boon to yourself.</em></p>"
+          "public": "<p>The party's clothing and travel gear has been expertly mended, pressed, and presented. Everyone looks put-together rather than road-worn — cleaner, sharper, more credible in social situations.</p><p><strong>Quality:</strong> {{materialQuality}}</p><p><strong>Boons:</strong> +{{boonCount}} to social skill checks (Deception, Diplomacy, Intimidation, Performance) where appearance and presentation matter.</p><p><strong>Duration:</strong> Lasts until the party takes a rest.</p><p><em>Use this item to apply the boon to yourself.</em></p>"
         }
       },
       "_tailoring": {
@@ -265,7 +265,7 @@
         "producedBy": ["mend"],
         "useEffect": "applyMendBoons",
         "boonScale": { "shoddy": 0, "standard": 1, "fine": 2, "superior": 3, "masterwork": 4 },
-        "boonSkills": ["diplomacy", "deception", "intimidation", "persuasion", "society"],
+        "boonSkills": ["deception", "diplomacy", "intimidation", "performance"],
         "duration": "infinite",
         "durationNote": "Crucible has no 'until next rest' duration primitive. The AE is created with infinite duration ({value: 0, units: 'rounds'}). The module registers a Hooks.on('rest', …) listener that finds and deletes all Mend boon AEs from resting actors when a rest completes.",
         "note": "materialQuality and boonCount are filled at craft time. When the player uses this consumable, it applies an Active Effect granting the boon to the user with infinite duration. The effect is cleared by the module's rest hook, not by the duration system."

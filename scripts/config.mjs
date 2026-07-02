@@ -13,29 +13,22 @@ export const FLAGS = {
   compendiumKey: "compendiumKey",
   recipeTag: "recipeTag",
   role: "role",
-  primary: "primary",
-  portable: "portable",
-  usedBy: "usedBy",
   producedBy: "producedBy",
   disguiseType: "disguiseType",
-  boonSkill: "boonSkill",
   affixSlotCost: "affixSlotCost",
   applicableTo: "applicableTo",
   tier: "tier",
   effect: "effect",
-  bonus: "bonus",
-  conditional: "conditional",
-  composite: "composite",
-  template: "template",
   qualityScales: "qualityScales",
-  authorable: "authorable",
   contextPlaceholder: "contextPlaceholder",
   useEffect: "useEffect",
   boonScale: "boonScale",
   boonSkills: "boonSkills",
   duration: "duration",
   resolved: "resolved",
-  actorUuid: "actorUuid"
+  actorUuid: "actorUuid",
+  mendBoonCount: "mendBoonCount",
+  mendPartyUuids: "mendPartyUuids"
 };
 
 // Timeout constants (milliseconds)
@@ -62,6 +55,9 @@ export const DEFAULTS = {
 
 // Quality tiers in ascending order (used by bandToQualityDelta)
 export const QUALITY_TIERS = ["shoddy", "standard", "fine", "superior", "masterwork"];
+
+// Boon count delivered per quality tier for Mend and Disguise activities.
+export const BOON_SCALE = { shoddy: 0, standard: 1, fine: 2, superior: 3, masterwork: 4 };
 
 // Success bands
 export const BANDS = {

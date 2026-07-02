@@ -141,10 +141,7 @@
       "noPartyMembers": "The party has no members."
     },
     "mend": {
-      "noBoons": "This mending has no boons to apply (shoddy quality).",
-      "effectName": "Mended Presentation",
-      "effectDescription": "The party's clothing has been expertly mended. +{boonCount} to social skill checks where appearance matters.",
-      "applied": "Mended Presentation applied: +{boonCount} to social skills until next rest."
+      "effectName": "Mended Presentation"
     },
     "gmConfig": {
       "title": "Tailoring Check Configuration",

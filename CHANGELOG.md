@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Mend creates one consumable on each targeted party member instead of a single item on the crafter
 - Proposal card and convert dialog show mend recipients
+- `scripts/utils.mjs` — shared helpers (`getDragEventData`, `getAbilityBonus`)
 
 ### Changed
 - Mend flow reordered — party members selected first, then materials (quantity scales with member count)
@@ -17,10 +18,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Party member selection uses `crucible.party` (group actor) instead of scanning all world actors
 - All `assemblePayload` quality reads prefer inferred-from-name quality over item data
 - `getActorMaterials` quality now infers from item name first, falling back to item data then registry
+- Extracted `BOON_SCALE` to config.mjs; removed 3 duplicate definitions
+- Extracted `getMaterialQuality()` to materials.mjs; replaced 5 copy-paste quality-resolution blocks
+- Tool/rank validation in queries.mjs now delegates to `validateActivityPrerequisites`
+- FLAGS registry cleaned up — 8 unused keys removed, 2 missing keys (`mendBoonCount`, `mendPartyUuids`) added
+- `toolFailKey` values normalized to bare keys; `craft-flow.mjs` wraps with i18n prefix
 
 ### Fixed
 - Quality badge now reads from item name for all paths (hub display, payload assembly)
 - `#handleDropEvent` changed from static to instance method — static private methods cannot access instance private fields in JavaScript
+- `applyModification.assemblePayload` was missing name-inferred quality; now uses `getMaterialQuality`
+- `boonSkills` mismatch between seed JSON and code — JSON corrected to match
+- `module.json` download URL bumped from 0.2.6-dev to 0.3.5-dev
+- Mend single-item fallback removed — empty `partyMemberUuids` is user error, no silent fallback
+
+### Removed
+- 3 unused i18n keys (`mend.noBoons`, `mend.effectDescription`, `mend.applied`)
 
 ## [0.3.4-dev] — Prerelease
 

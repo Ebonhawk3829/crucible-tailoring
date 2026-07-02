@@ -1,9 +1,11 @@
 // queries.mjs — CONFIG.queries handlers (GM-side logic)
 // Both handlers validate inputs GM-side and JSON-serialize their return.
 
-import { MODULE_ID, QUERY_REQUEST_ROLL, QUERY_PROPOSE_OUTPUT, FLAGS, getMaterialDC, getMendDC, getStrongSuccessDelta, QUALITY_TIERS } from "./config.mjs";
+import { MODULE_ID, QUERY_REQUEST_ROLL, QUERY_PROPOSE_OUTPUT, FLAGS, getMaterialDC, getMendDC, getStrongSuccessDelta, QUALITY_TIERS, BOON_SCALE } from "./config.mjs";
 import { resolveOutcome } from "./outcome.mjs";
 import { actorHasTool, TOOL_NAMES } from "./materials.mjs";
+import { validateActivityPrerequisites } from "./activity-setup.mjs";
+import { getAbilityBonus } from "./utils.mjs";
 
 const { DialogV2 } = foundry.applications.api;
 
@@ -18,34 +20,13 @@ export function registerQueryHandlers() {
 
 /**
  * Validate that the actor possesses the required tool for an activity.
+ * Delegates to activity-setup.mjs for the authoritative check.
  * @param {Actor} actor
  * @param {string} activityId
  * @returns {{ok: boolean, reason?: string}}
  */
 function validateToolRequirement(actor, activityId) {
-  const noviceActivities = ["craftTradeGoods", "craftEquipment", "mend"];
-  const journeymanActivities = ["craftDisguise", "applyModification"];
-
-  if (journeymanActivities.includes(activityId)) {
-    // Journeyman: requires Portable Workbench
-    if (!actorHasTool(actor, TOOL_NAMES.workbench)) {
-      return { ok: false, reason: "missingPortableWorkbench" };
-    }
-  } else if (noviceActivities.includes(activityId)) {
-    // Novice: requires Tailor's Toolkit
-    if (!actorHasTool(actor, TOOL_NAMES.toolkit)) {
-      return { ok: false, reason: "missingToolkit" };
-    }
-  }
-
-  // Mend additionally requires Repair Kit
-  if (activityId === "mend") {
-    if (!actorHasTool(actor, TOOL_NAMES.repairKit)) {
-      return { ok: false, reason: "missingRepairKit" };
-    }
-  }
-
-  return { ok: true };
+  return validateActivityPrerequisites(actor, activityId);
 }
 
 /**
@@ -89,12 +70,10 @@ async function handleRequestRoll(payload) {
   }
 
   // Re-validate training rank GM-side — the query is the authoritative gate.
-  // Journeyman activities require rank 2 (Proficient), novice require rank 1 (Trained).
-  const rank = actor.system?.training?.tailoring ?? 0;
-  const journeymanActivities = ["craftDisguise", "applyModification"];
-  const requiredRank = journeymanActivities.includes(payload.activityId) ? 2 : 1;
-  if (rank < requiredRank) {
-    return { ok: false, reason: "insufficientRank" };
+  // Delegates to validateActivityPrerequisites which reads the tier from ACTIVITY_DEFS.
+  const prereqCheck = validateActivityPrerequisites(actor, payload.activityId);
+  if (!prereqCheck.ok) {
+    return { ok: false, reason: prereqCheck.reason };
   }
 
   // Determine suggested DC from module settings
@@ -112,9 +91,7 @@ async function handleRequestRoll(payload) {
   // Build the skill check via Crucible's StandardCheck.
   // Tailoring is not a standard skill in SYSTEM.SKILLS, so we manually compute
   // (dex + int) / 4 to match Crucible's two-ability pattern.
-  const dex = actor.system?.abilities?.dexterity?.value ?? 0;
-  const int = actor.system?.abilities?.intellect?.value ?? 0;
-  const abilityBonus = Math.round((dex + int) / 4);
+  const abilityBonus = getAbilityBonus(actor);
   const skillBonus = actor.getSkillBonus?.(["tailoring"]) ?? 0;
 
   const check = new crucible.api.dice.StandardCheck({

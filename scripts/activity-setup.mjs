@@ -2,8 +2,8 @@
 // Each activity has different input selection, tool requirements, and output specs.
 // These functions run on the PLAYER's client before the GM pings.
 
-import { MODULE_ID, FLAGS, getMaterialDC, getMendDC } from "./config.mjs";
-import { actorHasTool, TOOL_NAMES, inferQualityFromName } from "./materials.mjs";
+import { MODULE_ID, FLAGS, getMaterialDC, getMendDC, BOON_SCALE } from "./config.mjs";
+import { actorHasTool, TOOL_NAMES, inferQualityFromName, getMaterialQuality } from "./materials.mjs";
 
 /**
  * Activity definition registry.
@@ -15,7 +15,7 @@ export const ACTIVITY_DEFS = {
     id: "craftTradeGoods",
     tier: "novice",
     toolCheck: (actor) => actorHasTool(actor, TOOL_NAMES.toolkit),
-    toolFailKey: "crucible-tailoring.query.missingToolkit",
+    toolFailKey: "missingToolkit",
 
     /**
      * Assemble the requestRoll payload for Craft Trade Goods.
@@ -23,9 +23,7 @@ export const ACTIVITY_DEFS = {
      */
     assemblePayload(actor, selectedMaterials, extra = {}) {
       if (!selectedMaterials?.length) return null;
-      const materialQuality = inferQualityFromName(selectedMaterials[0].name)
-        ?? selectedMaterials[0].system?.quality
-        ?? "standard";
+      const materialQuality = getMaterialQuality(selectedMaterials[0]);
       const dc = getMaterialDC(materialQuality);
       // Build per-material quantity map from batch selections
       const materialQuantities = {};
@@ -81,9 +79,7 @@ export const ACTIVITY_DEFS = {
 
     assemblePayload(actor, selectedMaterials, extra = {}) {
       if (!selectedMaterials?.length || !extra.outputItem) return null;
-      const materialQuality = inferQualityFromName(selectedMaterials[0].name)
-        ?? selectedMaterials[0].system?.quality
-        ?? "standard";
+      const materialQuality = getMaterialQuality(selectedMaterials[0]);
       const dc = getMaterialDC(materialQuality);
       // outputItem is always a real Foundry Item (from getRegisteredRecipes or recipe drop zone)
       const outputItemId = extra.outputItem.uuid;
@@ -120,13 +116,11 @@ export const ACTIVITY_DEFS = {
     tier: "novice",
     toolCheck: (actor) =>
       actorHasTool(actor, TOOL_NAMES.toolkit) && actorHasTool(actor, TOOL_NAMES.repairKit),
-    toolFailKey: "crucible-tailoring.query.missingRepairKit",
+    toolFailKey: "missingRepairKit",
 
     assemblePayload(actor, selectedMaterials, extra = {}) {
       if (!selectedMaterials?.length) return null;
-      const materialQuality = inferQualityFromName(selectedMaterials[0].name)
-        ?? selectedMaterials[0].system?.quality
-        ?? "standard";
+      const materialQuality = getMaterialQuality(selectedMaterials[0]);
       const dc = getMendDC();
       const partyMembers = extra.partyMembers ?? [actor];
       // Build per-material quantity map from batch selections
@@ -149,8 +143,7 @@ export const ACTIVITY_DEFS = {
     },
 
     buildOutputSpec(band, quality, payload, extra = {}) {
-      const boonScale = { shoddy: 0, standard: 1, fine: 2, superior: 3, masterwork: 4 };
-      const boonCount = boonScale[quality] ?? 0;
+      const boonCount = BOON_SCALE[quality] ?? 0;
       return {
         type: "consumable",
         name: "Mended Presentation",
@@ -170,7 +163,7 @@ export const ACTIVITY_DEFS = {
           compendiumKey: "mendConsumable0",
           producedBy: ["mend"],
           useEffect: "applyMendBoons",
-          boonScale,
+          boonScale: BOON_SCALE,
           boonSkills: ["deception", "diplomacy", "intimidation", "performance"],
           duration: "infinite",
           partyMemberUuids: payload.partyMemberUuids ?? []
@@ -183,13 +176,11 @@ export const ACTIVITY_DEFS = {
     id: "craftDisguise",
     tier: "journeyman",
     toolCheck: (actor) => actorHasTool(actor, TOOL_NAMES.workbench),
-    toolFailKey: "crucible-tailoring.query.missingPortableWorkbench",
+    toolFailKey: "missingPortableWorkbench",
 
     assemblePayload(actor, selectedMaterials, extra = {}) {
       if (!selectedMaterials?.length) return null;
-      const materialQuality = inferQualityFromName(selectedMaterials[0].name)
-        ?? selectedMaterials[0].system?.quality
-        ?? "standard";
+      const materialQuality = getMaterialQuality(selectedMaterials[0]);
       const dc = getMaterialDC(materialQuality);
       return {
         actorUuid: actor.uuid,
@@ -203,8 +194,7 @@ export const ACTIVITY_DEFS = {
     },
 
     buildOutputSpec(band, quality, payload, extra = {}) {
-      const boonScale = { shoddy: 0, standard: 1, fine: 2, superior: 3, masterwork: 4 };
-      const boonCount = boonScale[quality] ?? 0;
+      const boonCount = BOON_SCALE[quality] ?? 0;
       const isSocial = payload.disguiseType === "social";
       const boonSkill = isSocial ? "deception" : "stealth";
       const contextLabel = payload.context || (isSocial ? "general social" : "general terrain");
@@ -241,11 +231,11 @@ export const ACTIVITY_DEFS = {
     id: "applyModification",
     tier: "journeyman",
     toolCheck: (actor) => actorHasTool(actor, TOOL_NAMES.workbench),
-    toolFailKey: "crucible-tailoring.query.missingPortableWorkbench",
+    toolFailKey: "missingPortableWorkbench",
 
     assemblePayload(actor, selectedMaterials, extra = {}) {
       if (!selectedMaterials?.length || !extra.sourceItem || !extra.affixItem) return null;
-      const materialQuality = selectedMaterials[0].system?.quality ?? "standard";
+      const materialQuality = getMaterialQuality(selectedMaterials[0]);
       const dc = getMaterialDC(materialQuality);
       return {
         actorUuid: actor.uuid,

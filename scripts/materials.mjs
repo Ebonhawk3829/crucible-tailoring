@@ -22,6 +22,21 @@ function _nameIndex() {
 }
 
 /**
+ * Determine quality from an item, preferring name inference over system data.
+ * Used by all assemblePayload functions — replaces 4 duplicate blocks.
+ *
+ * @param {Item} item - The material item
+ * @param {object} [def] - Optional registered material type definition
+ * @returns {string}
+ */
+export function getMaterialQuality(item, def) {
+  return inferQualityFromName(item.name)
+    ?? item.system?.quality
+    ?? def?.quality
+    ?? "standard";
+}
+
+/**
  * Attempt to infer a quality tier from an item name.
  * Matches case-insensitively against known tier names.
  * @param {string} name
@@ -80,9 +95,7 @@ export function getActorMaterials(actor) {
     name: representative.name,
     img: representative.img ?? def.img,
     type: representative.type,
-    quality: inferQualityFromName(representative.name)
-      ?? representative.system?.quality
-      ?? def.quality,
+    quality: getMaterialQuality(representative, def),
     system: representative.system,
     quantity: total
   }));
@@ -338,7 +351,7 @@ export async function ensureSeedItems() {
 }
 
 // =========================================================================
-// Recipe tagging (unchanged — recipes are still flags on world items)
+// Recipe tagging — flags on world items
 // =========================================================================
 
 /**

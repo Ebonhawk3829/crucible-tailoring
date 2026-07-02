@@ -13,32 +13,9 @@ import {
   clearMaterialType,
   clearAllMaterials
 } from "./materials.mjs";
+import { getDragEventData, getAbilityBonus } from "./utils.mjs";
 
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
-
-/**
- * Resolve drag event data, with a fallback for v14 builds where the import
- * path may differ. The documented v14 helper is TextEditor.getDragEventData(event)
- * in some builds, foundry.applications.ux.TextEditor.implementation.getDragEventData
- * in others.
- * @param {DragEvent} event
- * @returns {object|null}
- */
-function getDragEventData(event) {
-  try {
-    const impl = foundry.applications.ux.TextEditor.implementation;
-    if (typeof impl?.getDragEventData === "function") return impl.getDragEventData(event);
-  } catch (_e) { /* fall through */ }
-  try {
-    if (typeof TextEditor?.getDragEventData === "function") return TextEditor.getDragEventData(event);
-  } catch (_e) { /* fall through */ }
-  // Last resort: try to parse from dataTransfer directly
-  try {
-    const json = event.dataTransfer?.getData("text/plain");
-    if (json) return JSON.parse(json);
-  } catch (_e) { /* fall through */ }
-  return null;
-}
 
 /**
  * Training rank → display label mapping.
@@ -165,10 +142,7 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
   async _prepareContext(options) {
     const rank = this.actor?.system?.training?.tailoring ?? 0;
     const trainingBonus = this.actor?.getSkillBonus?.(["tailoring"]) ?? 0;
-    // Compute ability bonus: (dex + int) / 4, matching Crucible's two-ability pattern
-    const dex = this.actor?.system?.abilities?.dexterity?.value ?? 0;
-    const int = this.actor?.system?.abilities?.intellect?.value ?? 0;
-    const abilityBonus = Math.round((dex + int) / 4);
+    const abilityBonus = getAbilityBonus(this.actor);
     const totalBonus = trainingBonus + abilityBonus;
     const bonus = totalBonus >= 0 ? `+${totalBonus}` : `${totalBonus}`;
 

@@ -1,7 +1,6 @@
-// chat.mjs — proposal card render + GM confirm button handler
-// This file owns the ONLY mutation in the module.
+// chat.mjs — GM proposal cards, confirm pipeline, chat hook
 
-import { MODULE_ID, FLAGS, QUALITY_TIERS } from "./config.mjs";
+import { MODULE_ID, FLAGS, QUALITY_TIERS, BOON_SCALE } from "./config.mjs";
 
 const { renderTemplate } = foundry.applications.handlebars;
 
@@ -94,6 +93,7 @@ export async function confirmProposal(message) {
     return;
   }
 
+  // ===== Phase 1: Validate =====
   // Re-validate the actor still holds the claimed inputs in the claimed quantities
   const inputItems = [];
   for (const uuid of proposal.inputUuids) {
@@ -105,8 +105,7 @@ export async function confirmProposal(message) {
     inputItems.push(item);
   }
 
-  // --- THE WRITE ---
-  // Consume inputs using Crucible's built-in consume() for proper stackable handling
+  // ===== Phase 2: Consume inputs =====
   for (const item of inputItems) {
     if (typeof item.system?.consume === "function") {
       await item.system.consume(1, { save: true });
@@ -125,7 +124,7 @@ export async function confirmProposal(message) {
     }
   }
 
-  // Create output — activity-specific handling
+  // ===== Phase 3: Create output =====
   const outputSpec = proposal.outputSpec;
   const activityId = proposal.activityId;
 
@@ -188,8 +187,7 @@ export async function confirmProposal(message) {
     // Mend: create one consumable on EACH targeted party member
     if (activityId === "mend" && outputSpec._tailoring?.partyMemberUuids?.length) {
       const memberUuids = outputSpec._tailoring.partyMemberUuids;
-      const boonScale = outputSpec._tailoring?.boonScale ?? {};
-      const boonCount = boonScale[itemData.system.quality ?? proposal.quality] ?? 0;
+      const boonCount = BOON_SCALE[itemData.system.quality ?? proposal.quality] ?? 0;
 
       let deliveredCount = 0;
       for (const memberUuid of memberUuids) {
@@ -211,8 +209,8 @@ export async function confirmProposal(message) {
           }
         }
         if (boonCount > 0) {
-          flagUpdates[`flags.${MODULE_ID}.mendBoonCount`] = boonCount;
-          flagUpdates[`flags.${MODULE_ID}.mendPartyUuids`] = memberUuids;
+          flagUpdates[`flags.${MODULE_ID}.${FLAGS.mendBoonCount}`] = boonCount;
+          flagUpdates[`flags.${MODULE_ID}.${FLAGS.mendPartyUuids}`] = memberUuids;
         }
         if (Object.keys(flagUpdates).length > 0) {
           await created[0].update(flagUpdates);
@@ -229,7 +227,7 @@ export async function confirmProposal(message) {
         return;
       }
     } else {
-      // Standard single-item creation
+      // Standard single-item creation — Craft Equipment, Trade Goods, Disguise
       const created = await actor.createEmbeddedDocuments("Item", [itemData]);
       if (created?.length) {
         // Set tailoring flags on the created item
@@ -242,23 +240,11 @@ export async function confirmProposal(message) {
         if (Object.keys(flagUpdates).length > 0) {
           await created[0].update(flagUpdates);
         }
-
-        // For Mend consumables, also create the ActiveEffect template on the item
-        // so that when used, it knows what AE to apply.
-        if (activityId === "mend" && outputSpec._tailoring?.useEffect === "applyMendBoons") {
-          const boonCount = outputSpec._tailoring?.boonScale?.[outputSpec.quality] ?? 0;
-          if (boonCount > 0) {
-            await created[0].setFlag(MODULE_ID, "mendBoonCount", boonCount);
-            await created[0].setFlag(MODULE_ID, "mendPartyUuids", outputSpec._tailoring?.partyMemberUuids ?? []);
-          }
-        }
       }
     }
   }
 
-  // Mark proposal as resolved and update the card in-place.
-  // Idempotent: if the content is already wrapped (e.g. repeated confirm),
-  // don't nest another wrapper.
+  // ===== Phase 4: Mark resolved =====
   const updatedFlags = foundry.utils.deepClone(message.flags);
   updatedFlags[MODULE_ID][FLAGS.proposal].resolved = true;
 

@@ -66,7 +66,7 @@
 }
 
 .crucible-tailoring .activity-card:hover {
-  background: var(--color-bg-hover, rgba(0,0,0,0.05));
+  background: var(--color-bg-hover, rgba(0, 0, 0, 0.05));
 }
 
 .crucible-tailoring .activity-locked {
@@ -441,7 +441,7 @@
 }
 
 .crucible-tailoring-launch:hover {
-  background: var(--color-bg-hover, rgba(0,0,0,0.05));
+  background: var(--color-bg-hover, rgba(0, 0, 0, 0.05));
   text-shadow: none;
 }
 

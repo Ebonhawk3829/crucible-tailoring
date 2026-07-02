@@ -3,29 +3,9 @@
 // the player drags an affix from the compendium onto the output side.
 
 import { MODULE_ID, FLAGS } from "./config.mjs";
+import { getDragEventData } from "./utils.mjs";
 
 const { ApplicationV2 } = foundry.applications.api;
-
-/**
- * Resolve drag event data, with a fallback for v14 builds where the import
- * path may differ.
- * @param {DragEvent} event
- * @returns {object|null}
- */
-function getDragEventData(event) {
-  try {
-    const impl = foundry.applications.ux.TextEditor.implementation;
-    if (typeof impl?.getDragEventData === "function") return impl.getDragEventData(event);
-  } catch (_e) { /* fall through */ }
-  try {
-    if (typeof TextEditor?.getDragEventData === "function") return TextEditor.getDragEventData(event);
-  } catch (_e) { /* fall through */ }
-  try {
-    const json = event.dataTransfer?.getData("text/plain");
-    if (json) return JSON.parse(json);
-  } catch (_e) { /* fall through */ }
-  return null;
-}
 
 export class ModificationDialog extends ApplicationV2 {
   /** @override */

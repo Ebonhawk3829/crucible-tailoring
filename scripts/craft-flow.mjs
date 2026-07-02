@@ -24,7 +24,7 @@ export async function runCraftFlow({ actor, activityId, selectedMaterials, extra
   // 1. Validate prerequisites
   const prereq = validateActivityPrerequisites(actor, activityId);
   if (!prereq.ok) {
-    ui.notifications.warn(game.i18n.localize(prereq.reason));
+    ui.notifications.warn(game.i18n.localize(`crucible-tailoring.query.${prereq.reason}`));
     return { success: false, reason: prereq.reason };
   }
 
