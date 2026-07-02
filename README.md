@@ -1,4 +1,4 @@
-# Crucible Tailoring (Under development - not yet a working module)
+# Crucible Tailoring (Under development)
 
 ![Foundry v14](https://img.shields.io/badge/Foundry-v14-informational)
 ![Crucible](https://img.shields.io/badge/System-Crucible-orange)

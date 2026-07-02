@@ -233,7 +233,7 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
     // wired manually. Bind drop + dragover for both drop zones.
     const dropZones = this.element.querySelectorAll("[data-action='recipe-drop'], [data-action='import-material']");
     for (const zone of dropZones) {
-      zone.addEventListener("drop", (e) => this.constructor.#handleDropEvent(e, this));
+      zone.addEventListener("drop", (e) => this.#handleDropEvent(e));
       zone.addEventListener("dragover", (e) => e.preventDefault());
     }
   }
@@ -242,13 +242,12 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
    * Shared drop handler for recipe and material import zones.
    * Routes to the correct private method based on data-action.
    * @param {DragEvent} event
-   * @param {TailoringHub} app
    */
-  static #handleDropEvent(event, app) {
+  #handleDropEvent(event) {
     event.preventDefault();
     const action = event.currentTarget.dataset.action;
-    if (action === "recipe-drop") app.#handleRecipeDrop(event);
-    else if (action === "import-material") app.#handleMaterialImportDrop(event);
+    if (action === "recipe-drop") this.#handleRecipeDrop(event);
+    else if (action === "import-material") this.#handleMaterialImportDrop(event);
   }
 
   /**

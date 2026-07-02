@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Quality badge now reads from item name for all paths (hub display, payload assembly)
+- `#handleDropEvent` changed from static to instance method — static private methods cannot access instance private fields in JavaScript
 
 ## [0.3.4-dev] — Prerelease
 
