@@ -704,12 +704,12 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
 
     if (result !== "ok") return null;
 
-    const members = [];
+    const selected = [];
     for (const uuid of checkedUuids) {
       const actor = await fromUuid(uuid);
-      if (actor) members.push(actor);
+      if (actor) selected.push(actor);
     }
-    return members.length > 0 ? members : null;
+    return selected.length > 0 ? selected : null;
   }
 
   /**
