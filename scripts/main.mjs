@@ -24,6 +24,7 @@ function registerMendHook() {
       if (boonCount <= 0) return;
 
       const boonSkills = ["deception", "diplomacy", "intimidation", "performance"];
+      const skillLabels = boonSkills.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(", ");
 
       // Dummy ActiveEffect — visual reminder only, no mechanical fields.
       this.recordEvent({
@@ -33,6 +34,9 @@ function registerMendHook() {
           name: game.i18n.localize("crucible-tailoring.mend.effectName"),
           img: item.img,
           origin: item.uuid,
+          description: game.i18n.format("crucible-tailoring.mend.effectTooltip", {
+            count: boonCount, skills: skillLabels
+          }),
           duration: { value: 0, units: "rounds" }, // infinite, manually cleared
           flags: {
             [MODULE_ID]: {
@@ -44,10 +48,80 @@ function registerMendHook() {
           changes: []  // No mechanical changes — visual reminder only
         }]
       });
+    },
+
+    async confirm(reverse) {
+      if (reverse) return;
+      const item = this.item;
+      if (!item || typeof item.system?.consume !== "function") return;
+      await item.system.consume(1, { save: true });
     }
   };
 
   console.log("crucible-tailoring | Registered Mend consumable action hook");
+}
+
+/**
+ * Register ActiveEffect hooks for disguise equip actions.
+ * When a player equips a disguise, record a visual ActiveEffect
+ * showing the boon type, count, and context.
+ *
+ * Guarded by sentinel to prevent double-registration across reloads.
+ */
+function registerDisguiseHooks() {
+  const DISGUISE_IDS = ["disguiseSocialEquip", "disguiseEnvironEquip"];
+
+  for (const id of DISGUISE_IDS) {
+    if (crucible.api.hooks.action[id]) continue; // sentinel
+
+    crucible.api.hooks.action[id] = {
+      postActivate() {
+        const item = this.item;
+        if (!item) return;
+
+        const tailoringFlags = item.flags?.[MODULE_ID] ?? {};
+        const disguiseType = tailoringFlags.disguiseType ?? (id === "disguiseSocialEquip" ? "social" : "environmental");
+        const boonSkill = tailoringFlags.boonSkill ?? (disguiseType === "social" ? "deception" : "stealth");
+        const boonScale = tailoringFlags.boonScale;
+        const boonCount = typeof boonScale === "number" ? boonScale : null;
+
+        const isSocial = disguiseType === "social";
+        const effectName = isSocial
+          ? game.i18n.localize("crucible-tailoring.disguise.effectNameSocial")
+          : game.i18n.localize("crucible-tailoring.disguise.effectNameEnvironmental");
+        const descKey = isSocial
+          ? "crucible-tailoring.disguise.effectTooltipSocial"
+          : "crucible-tailoring.disguise.effectTooltipEnvironmental";
+
+        const description = boonCount != null
+          ? game.i18n.format(descKey, { count: boonCount })
+          : game.i18n.localize(descKey);
+
+        this.recordEvent({
+          type: "effect",
+          target: this.actor,
+          effects: [{
+            name: effectName,
+            img: item.img,
+            origin: item.uuid,
+            description,
+            duration: { value: 0, units: "rounds" },
+            flags: {
+              [MODULE_ID]: {
+                useEffect: "disguiseEquipped",
+                disguiseType,
+                boonSkill,
+                boonCount
+              }
+            },
+            changes: []
+          }]
+        });
+      }
+    };
+  }
+
+  console.log("crucible-tailoring | Registered disguise equip action hooks");
 }
 
 Hooks.once("init", () => {
@@ -83,6 +157,9 @@ Hooks.once("ready", async () => {
 
   // Register Mend consumable action hook
   registerMendHook();
+
+  // Register disguise equip action hooks
+  registerDisguiseHooks();
 
   // Inject launch button into Crucible actor sheets
   Hooks.on("renderActorSheetV2", (app, element, data) => {

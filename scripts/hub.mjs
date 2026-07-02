@@ -340,11 +340,17 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
       }
 
       case "craftEquipment": {
-        // Select materials + output item
-        const selected = await this._selectMaterials(materials, 1, Infinity);
-        if (!selected) return;
+        // Step 1: Select recipe FIRST
         const outputItem = await this._selectOutputItem();
         if (!outputItem) return;
+
+        // Step 2: Compute material cost from the recipe
+        const { materialsRequired } = computeMaterialsRequired(outputItem);
+
+        // Step 3: Select materials, constrained by the recipe's cost
+        const selected = await this._selectMaterials(materials, materialsRequired, materialsRequired);
+        if (!selected) return;
+
         await runCraftFlow({
           actor: this.actor,
           activityId,
@@ -388,11 +394,15 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
       }
 
       case "craftDisguise": {
-        // Select materials + disguise type + context
+        // Step 1: Select disguise type + context FIRST
+        const disguiseOpts = await this._selectDisguiseOptions();
+        if (!disguiseOpts) return;
+        const { disguiseType, context } = disguiseOpts;
+
+        // Step 2: Select materials (always 4 per design doc)
         const selected = await this._selectMaterials(materials, 4, 4);
         if (!selected) return;
-        const { disguiseType, context } = await this._selectDisguiseOptions();
-        if (!disguiseType) return;
+
         await runCraftFlow({
           actor: this.actor,
           activityId,
@@ -584,7 +594,7 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
 
     const options = materials.map(m => ({
       value: m.id,
-      label: `${m.name} (${m.system?.quality ?? "standard"})${m.quantity > 1 ? ` x${m.quantity}` : ""}`,
+      label: `${m.name} (${m.quality ?? m.system?.quality ?? "standard"})${m.quantity > 1 ? ` x${m.quantity}` : ""}`,
       img: m.img
     }));
 
@@ -600,7 +610,9 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
             </label>
           `).join("")}
         </div>
-        <p style="font-size:0.75rem;color:#666;">${game.i18n.format("crucible-tailoring.flow.materialCount", { min: minCount, max: maxCount })}</p>
+        <p style="font-size:0.75rem;color:#666;">${minCount === maxCount
+          ? game.i18n.format("crucible-tailoring.flow.materialCountExact", { count: minCount })
+          : game.i18n.format("crucible-tailoring.flow.materialCount", { min: minCount, max: maxCount })}</p>
       </div>
     `;
 

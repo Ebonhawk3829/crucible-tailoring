@@ -248,6 +248,7 @@ export const ACTIVITY_DEFS = {
           compendiumKey: isSocial ? "disguiseSocial0" : "disguiseEnviron0",
           disguiseType: payload.disguiseType ?? "social",
           boonSkill,
+          boonScale: boonCount,
           contextPlaceholder: true
         }
       };

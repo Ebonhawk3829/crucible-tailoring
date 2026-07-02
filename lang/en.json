@@ -115,6 +115,7 @@
       "selectMaterials": "Select materials to use:",
       "selectMaterialsTitle": "Select Materials",
       "materialCount": "Select between {min} and {max} materials.",
+      "materialCountExact": "This recipe requires exactly {count} material(s). Select {count}.",
       "confirm": "Confirm",
       "cancel": "Cancel",
       "selectOutput": "Select an item to craft:",
@@ -142,7 +143,14 @@
       "noPartyMembers": "The party has no members."
     },
     "mend": {
-      "effectName": "Mended Presentation"
+      "effectName": "Mended Presentation",
+      "effectTooltip": "+{count} boon(s) to {skills} checks where appearance matters. Lasts until rest."
+    },
+    "disguise": {
+      "effectNameSocial": "Wearing Social Disguise",
+      "effectNameEnvironmental": "Wearing Environmental Disguise",
+      "effectTooltipSocial": "+{count} boon(s) to Deception checks to maintain this cover.",
+      "effectTooltipEnvironmental": "+{count} boon(s) to Stealth checks in the target terrain."
     },
     "gmConfig": {
       "title": "Tailoring Check Configuration",
