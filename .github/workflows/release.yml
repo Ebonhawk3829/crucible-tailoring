@@ -47,7 +47,7 @@ jobs:
       - name: Build module.zip
         if: steps.tag_check.outputs.exists == 'false'
         run: |
-          zip -r module.zip module.json templates/ styles/ scripts/ lang/ data/ tests/
+          zip -r module.zip module.json templates/ styles/ scripts/ lang/ data/ tests/ assets/
 
       - name: Extract changelog for version
         if: steps.tag_check.outputs.exists == 'false'
