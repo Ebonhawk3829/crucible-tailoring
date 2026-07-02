@@ -1,9 +1,11 @@
 // queries.mjs — CONFIG.queries handlers (GM-side logic)
 // Both handlers validate inputs GM-side and JSON-serialize their return.
 
-import { MODULE_ID, QUERY_REQUEST_ROLL, QUERY_PROPOSE_OUTPUT, FLAGS, getMaterialDC, getMendDC, getStrongSuccessDelta } from "./config.mjs";
+import { MODULE_ID, QUERY_REQUEST_ROLL, QUERY_PROPOSE_OUTPUT, FLAGS, getMaterialDC, getMendDC, getStrongSuccessDelta, QUALITY_TIERS } from "./config.mjs";
 import { resolveOutcome } from "./outcome.mjs";
 import { actorHasTool, TOOL_NAMES } from "./materials.mjs";
+
+const { DialogV2 } = foundry.applications.api;
 
 /**
  * Register both query handlers in CONFIG.queries.
@@ -95,14 +97,21 @@ async function handleRequestRoll(payload) {
     return { ok: false, reason: "insufficientRank" };
   }
 
-  // Determine DC
+  // Determine suggested DC from module settings
   const materialQuality = payload.materialQuality ?? "standard";
-  const dc = getActivityDC(payload.activityId, materialQuality);
+  const suggestedDC = getActivityDC(payload.activityId, materialQuality);
 
-  // Build the skill check via Crucible's actor.getSkillCheck().
-  // Tailoring is not a standard skill in SYSTEM.SKILLS, so getSkillCheck does
-  // not compute an ability bonus automatically — ability defaults to 0.
-  // We manually compute (dex + int) / 4 to match Crucible's two-ability pattern.
+  // ---- GM configuration dialog ----
+  // The GM sees the activity, material quality, and suggested DC.  They can
+  // override the DC before formally requesting the roll from the player.
+  const confirmedDC = await _promptGMDC(payload.activityId, materialQuality, suggestedDC, actor);
+  if (confirmedDC === null) {
+    return { ok: false, reason: "rollCancelled" };
+  }
+
+  // Build the skill check via Crucible's StandardCheck.
+  // Tailoring is not a standard skill in SYSTEM.SKILLS, so we manually compute
+  // (dex + int) / 4 to match Crucible's two-ability pattern.
   const dex = actor.system?.abilities?.dexterity?.value ?? 0;
   const int = actor.system?.abilities?.intellect?.value ?? 0;
   const abilityBonus = Math.round((dex + int) / 4);
@@ -110,7 +119,7 @@ async function handleRequestRoll(payload) {
 
   const check = new crucible.api.dice.StandardCheck({
     actorId: actor.id,
-    dc,
+    dc: confirmedDC,
     ability: abilityBonus,
     skill: skillBonus,
     enchantment: 0,
@@ -127,37 +136,109 @@ async function handleRequestRoll(payload) {
   }
 
   // Dispatch the roll dialog to the player via Crucible's check.request().
-  // The GM awaits the result here — the player sees the dialog, rolls, and
-  // the result comes back to the GM, who relays it to the player's craft flow.
-  // The outer requestRoll timeout must exceed the inner requestSkillCheck timeout.
-  //
-  // IMPORTANT: check.request({user}) returns a ChatMessage (via
-  // StandardCheck.handle → pool.toMessage), NOT a plain {total} object.
-  // The roll data is at message.rolls[0].total.
+  // The return value over user.query is a SERIALIZED ChatMessage — the .rolls
+  // array may be stringified.  Look up the real message from the world
+  // collection by ID to get the actual Roll.total.
   try {
-    const message = await check.request({ user: requestingUser });
+    const result = await check.request({ user: requestingUser });
 
-    // check.request() returns undefined when the player cancels the roll dialog
-    // (StandardCheck.handle returns nothing when response === null).
-    // Fail loud — don't silently default to 0.
-    if (!message) {
+    if (!result) {
       return { ok: false, reason: "rollCancelled" };
     }
 
-    const total = message.rolls?.[0]?.total;
+    // Extract roll total from the serialized/synced ChatMessage
+    let message = game.messages.get(result._id ?? result.id);
+    if (!message) {
+      // Message may not have synced yet — brief polling retry
+      for (let i = 0; i < 3; i++) {
+        await new Promise(r => setTimeout(r, 200));
+        message = game.messages.get(result._id ?? result.id);
+        if (message) break;
+      }
+    }
+
+    const total = message?.rolls?.[0]?.total;
     if (total === undefined || total === null) {
-      console.warn("crucible-tailoring | requestRoll: roll total is undefined — ChatMessage may have no rolls array");
+      console.warn("crucible-tailoring | requestRoll: could not extract roll total from message");
       return { ok: false, reason: "rollFailed" };
     }
 
     const thresholds = { strongSuccess: getStrongSuccessDelta() };
-    const { band, quality } = resolveOutcome(total, dc, materialQuality, thresholds);
+    const { band, quality } = resolveOutcome(total, confirmedDC, materialQuality, thresholds);
 
     return { ok: true, total, band, quality };
   } catch (err) {
     console.warn("crucible-tailoring | requestRoll error:", err);
     return { ok: false, reason: "rollTimeout" };
   }
+}
+
+/**
+ * Prompt the GM with a configuration dialog showing the suggested DC.
+ * The GM may override the DC or cancel the roll request entirely.
+ *
+ * @param {string} activityId
+ * @param {string} materialQuality
+ * @param {number} suggestedDC
+ * @param {Actor} actor
+ * @returns {Promise<number|null>} The confirmed DC, or null if cancelled
+ */
+async function _promptGMDC(activityId, materialQuality, suggestedDC, actor) {
+  // Build a lookup of all DC→label pairs from module settings
+  const dcOptions = [];
+  for (const q of QUALITY_TIERS) {
+    const dc = getMaterialDC(q);
+    const label = `${q.charAt(0).toUpperCase() + q.slice(1)} Material`;
+    if (!dcOptions.some(o => o.dc === dc)) {
+      dcOptions.push({ dc, label });
+    }
+  }
+  const mendDC = getMendDC();
+  if (!dcOptions.some(o => o.dc === mendDC)) {
+    dcOptions.push({ dc: mendDC, label: "Mend" });
+  }
+
+  const activityLabel = game.i18n.localize(`crucible-tailoring.activity.${activityId}.label`);
+
+  let chosenDC = suggestedDC;
+
+  const result = await DialogV2.wait({
+    window: {
+      title: game.i18n.localize("crucible-tailoring.gmConfig.title"),
+      icon: "fa-dice-d8"
+    },
+    content: `
+      <div style="padding:0.5rem;display:flex;flex-direction:column;gap:0.5rem;">
+        <p>${game.i18n.format("crucible-tailoring.gmConfig.actorLabel", { actor: actor.name })}</p>
+        <p>${game.i18n.format("crucible-tailoring.gmConfig.activityLabel", { activity: activityLabel })}</p>
+        <p>${game.i18n.format("crucible-tailoring.gmConfig.materialLabel", { quality: materialQuality })}</p>
+        <label style="display:flex;align-items:center;gap:0.5rem;">
+          <span>${game.i18n.localize("crucible-tailoring.gmConfig.dcLabel")}:</span>
+          <select name="dc" style="flex:1;">
+            ${dcOptions.map(o => `
+              <option value="${o.dc}" ${o.dc === suggestedDC ? "selected" : ""}>${o.label} (DC ${o.dc})</option>
+            `).join("")}
+          </select>
+        </label>
+        <p style="font-size:0.75rem;color:#666;">${game.i18n.localize("crucible-tailoring.gmConfig.hint")}</p>
+      </div>
+    `,
+    buttons: [{
+      action: "ok",
+      label: game.i18n.localize("crucible-tailoring.gmConfig.request"),
+      default: true,
+      callback: (event, button, dialog) => {
+        const select = dialog.element.querySelector("select[name='dc']");
+        chosenDC = Number(select?.value) || suggestedDC;
+      }
+    }, {
+      action: "cancel",
+      label: game.i18n.localize("crucible-tailoring.gmConfig.cancel")
+    }]
+  });
+
+  if (result !== "ok") return null;
+  return chosenDC;
 }
 
 /**

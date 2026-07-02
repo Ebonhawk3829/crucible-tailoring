@@ -5,21 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.3-dev] — Prerelease
+
+### Added
+- GM configuration dialog before roll dispatch — GM sees suggested DC from module settings, can override before requesting roll
+
+### Fixed
+- Material quality now inferred from item name when importing (e.g. "Shoddy Tailoring Ingredient" → shoddy)
+- Roll total extraction fixed — `check.request()` return is a serialized ChatMessage; now looks up the real message in `game.messages`
+
 ## [0.3.2-dev] — Prerelease
 
 ### Changed
-- Material type registry decoupled from inventory — persisted as a world setting (`materialTypes` array of `{name, quality, img}`) instead of flags on world items
-- Material matching now uses exact name instead of `system.identifier` (avoids identifier-namespace poisoning from third-party modules)
-- Import drop handler registers a type definition via settings; no longer creates world `Item` documents, eliminating duplicate-item problem on clear/re-import
-- Clear operations (single/clear-all) edit the settings array directly, touching no inventory items
-- Removed dead `materialTag` flag, `tagItemAsMaterial`, `untagMaterial`, `isMaterialTagged`, and the `buildMaterialRegistry`/`getMaterialRegistry` scan infrastructure
+- Material type registry persisted as a world setting instead of flags on world items
+- Material matching uses exact name instead of `system.identifier`
+- Import drop registers a type definition — no world items created, no duplication on re-import
+- Clear operations edit the settings array, no inventory items touched
+- Removed dead `materialTag` flag and related scan infrastructure
 
 ## [0.3.1-dev] — Prerelease
 
 ### Fixed
-- Hub window now sizes to content by default (`height: "auto"`) instead of a fixed 720px
-- Material import drop now copies compendium/actor items into `game.items` before tagging — the registry scan for `buildMaterialRegistry()` only sees world items, so tagging a compendium document left the registry empty
-- `getActorMaterials` no longer requires per-stack `isMaterialTagged` flag — matching against the material type registry is sufficient; an actor "has" a material when any owned item's identifier matches a registered type
+- Hub window now sizes to content by default
+- Material import drop now copies compendium/actor items before tagging
+- `getActorMaterials` no longer requires per-stack `isMaterialTagged` flag
 
 ## [0.3.0-dev] — Prerelease
 

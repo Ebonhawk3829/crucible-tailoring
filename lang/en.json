@@ -133,6 +133,16 @@
       "effectName": "Mended Presentation",
       "effectDescription": "The party's clothing has been expertly mended. +{boonCount} to social skill checks where appearance matters.",
       "applied": "Mended Presentation applied: +{boonCount} to social skills until next rest."
+    },
+    "gmConfig": {
+      "title": "Tailoring Check Configuration",
+      "actorLabel": "<strong>Crafter:</strong> {actor}",
+      "activityLabel": "<strong>Activity:</strong> {activity}",
+      "materialLabel": "<strong>Material Quality:</strong> {quality}",
+      "dcLabel": "Difficulty Class (DC)",
+      "hint": "The GM may adjust the DC before requesting the roll from the player.",
+      "request": "Request Roll",
+      "cancel": "Cancel"
     }
   }
 }

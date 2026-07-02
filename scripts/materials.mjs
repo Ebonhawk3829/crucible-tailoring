@@ -21,6 +21,20 @@ function _nameIndex() {
   return new Map(getMaterialTypes().map(t => [t.name, t]));
 }
 
+/**
+ * Attempt to infer a quality tier from an item name.
+ * Matches case-insensitively against known tier names.
+ * @param {string} name
+ * @returns {string|null} The matched quality tier, or null if none found
+ */
+export function inferQualityFromName(name) {
+  const lower = name.toLowerCase();
+  for (const tier of QUALITY_TIERS) {
+    if (lower.includes(tier)) return tier;
+  }
+  return null;
+}
+
 /** Register a material type by exact name. Idempotent on name. */
 export async function registerMaterialType({ name, quality, img }) {
   const types = getMaterialTypes();

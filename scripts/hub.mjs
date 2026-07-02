@@ -740,10 +740,10 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
     const source = await fromUuid(data.uuid);
     if (!source) return;
 
-    const { registerMaterialType } = await import("./materials.mjs");
+    const { registerMaterialType, inferQualityFromName } = await import("./materials.mjs");
     await registerMaterialType({
       name: source.name,
-      quality: source.system?.quality ?? "standard",
+      quality: inferQualityFromName(source.name) ?? source.system?.quality ?? "standard",
       img: source.img
     });
     ui.notifications.info(
