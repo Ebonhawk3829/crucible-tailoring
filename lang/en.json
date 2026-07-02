@@ -10,7 +10,8 @@
       "bonus": "Bonus",
       "activities": "Activities",
       "materials": "Materials",
-      "noMaterials": "No tailoring materials found. Drag items from the sidebar into the import zone below to tag them.",
+      "noMaterials": "No tailoring materials found. Use the Import & Registration section below to register material types.",
+      "importTitle": "Import & Registration",
       "importPrompt": "Drop items here to import as tailoring materials",
       "materialImported": "{name} has been tagged as a tailoring material.",
       "recipes": "Registered Recipes",
@@ -126,7 +127,11 @@
       "disguiseContextPlaceholder": "Describe the disguise context...",
       "selectSourceItem": "Select the item to modify:",
       "selectSourceItemTitle": "Select Item to Modify",
-      "noEligibleItems": "No eligible cloth or leather items found on this character."
+      "noEligibleItems": "No eligible cloth or leather items found on this character.",
+      "selectBatchMaterials": "Select how many units of each material to use:",
+      "selectBatchTitle": "Select Batch Materials",
+      "batchHint": "Each unit of material produces one batch of trade goods. Quality of the output is determined by the crafting roll.",
+      "noMaterialsSelected": "No materials selected. Choose at least one unit to proceed."
     },
     "mend": {
       "noBoons": "This mending has no boons to apply (shoddy quality).",

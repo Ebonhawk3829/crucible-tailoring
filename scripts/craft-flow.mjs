@@ -107,7 +107,8 @@ export async function runCraftFlow({ actor, activityId, selectedMaterials, extra
     band: rollResult.band,
     quality: rollResult.quality,
     inputUuids: payload.inputUuids,
-    outputSpec
+    outputSpec,
+    materialQuantities: payload.materialQuantities ?? {}
   };
 
   let proposalResult;

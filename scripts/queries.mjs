@@ -184,19 +184,24 @@ async function handleRequestRoll(payload) {
  * @returns {Promise<number|null>} The confirmed DC, or null if cancelled
  */
 async function _promptGMDC(activityId, materialQuality, suggestedDC, actor) {
-  // Build a lookup of all DC→label pairs from module settings
-  const dcOptions = [];
+  // Build a lookup of all DC→label pairs from module settings, merging colliding DCs
+  const dcMap = new Map();
   for (const q of QUALITY_TIERS) {
     const dc = getMaterialDC(q);
     const label = `${q.charAt(0).toUpperCase() + q.slice(1)} Material`;
-    if (!dcOptions.some(o => o.dc === dc)) {
-      dcOptions.push({ dc, label });
+    if (dcMap.has(dc)) {
+      dcMap.set(dc, dcMap.get(dc) + " / " + label);
+    } else {
+      dcMap.set(dc, label);
     }
   }
   const mendDC = getMendDC();
-  if (!dcOptions.some(o => o.dc === mendDC)) {
-    dcOptions.push({ dc: mendDC, label: "Mend" });
+  if (dcMap.has(mendDC)) {
+    dcMap.set(mendDC, dcMap.get(mendDC) + " / Mend");
+  } else {
+    dcMap.set(mendDC, "Mend");
   }
+  const dcOptions = Array.from(dcMap.entries()).map(([dc, label]) => ({ dc, label }));
 
   const activityLabel = game.i18n.localize(`crucible-tailoring.activity.${activityId}.label`);
 

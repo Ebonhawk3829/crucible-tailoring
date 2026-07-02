@@ -141,6 +141,24 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
   constructor(options = {}) {
     super(options);
     this.actor = options.actor ?? null;
+    // Re-render the hub when any embedded item on this actor changes
+    this._actorItemHook = Hooks.on("updateItem", (item, changes, options, userId) => {
+      if (item.parent?.id === this.actor?.id) this.render();
+    });
+    this._actorDeleteHook = Hooks.on("deleteItem", (item, options, userId) => {
+      if (item.parent?.id === this.actor?.id) this.render();
+    });
+    this._actorCreateHook = Hooks.on("createItem", (item, options, userId) => {
+      if (item.parent?.id === this.actor?.id) this.render();
+    });
+  }
+
+  /** @override */
+  async close(options) {
+    if (this._actorItemHook !== undefined) Hooks.off("updateItem", this._actorItemHook);
+    if (this._actorDeleteHook !== undefined) Hooks.off("deleteItem", this._actorDeleteHook);
+    if (this._actorCreateHook !== undefined) Hooks.off("createItem", this._actorCreateHook);
+    return super.close(options);
   }
 
   /** @override */
@@ -340,10 +358,11 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
     // Activity-specific setup
     switch (activityId) {
       case "craftTradeGoods": {
-        // Simple: select materials, one batch per material unit
-        const selected = await this._selectMaterials(materials, 1, Infinity);
-        if (!selected) return;
-        await runCraftFlow({ actor: this.actor, activityId, selectedMaterials: selected });
+        // Batch: select materials with per-stack quantities
+        const batch = await this._selectMaterialBatch(materials);
+        if (!batch) return;
+        await runCraftFlow({ actor: this.actor, activityId, selectedMaterials: batch.materials,
+                              extra: { batchCount: batch.totalQuantity, batchSelections: batch.selections } });
         break;
       }
 
@@ -481,6 +500,76 @@ export class TailoringHub extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     return selected;
+  }
+
+  /**
+   * Open a dialog to select materials with per-stack quantities for Trade Goods.
+   * Different from _selectMaterials — this is a batch quantity selector where
+   * the player picks how many units from each material stack to consume.
+   *
+   * @param {Array} materials - Available materials from getActorMaterials
+   * @returns {Promise<object|null>} { materials, totalQuantity, selections } or null
+   */
+  async _selectMaterialBatch(materials) {
+    if (materials.length === 0) return null;
+
+    const content = `
+      <div style="padding:0.5rem;">
+        <p>${game.i18n.localize("crucible-tailoring.flow.selectBatchMaterials")}</p>
+        <div class="batch-material-list">
+          ${materials.map(m => `
+            <label class="batch-material-item" style="display:flex;align-items:center;gap:0.5rem;padding:0.25rem 0;">
+              <img src="${m.img}" alt="${m.name}" style="width:24px;height:24px;object-fit:contain;" />
+              <span style="flex:1;">${m.name} (${m.quality ?? "standard"}) — ${m.quantity} available</span>
+              <input type="number" name="qty-${m.id}" min="0" max="${m.quantity}" value="0"
+                     style="width:3.5rem;text-align:center;" />
+            </label>
+          `).join("")}
+        </div>
+        <p style="font-size:0.75rem;color:#666;">
+          ${game.i18n.localize("crucible-tailoring.flow.batchHint")}
+        </p>
+      </div>
+    `;
+
+    let selections = [];
+    const result = await DialogV2.wait({
+      window: { title: game.i18n.localize("crucible-tailoring.flow.selectBatchTitle"), icon: "fa-boxes" },
+      content,
+      buttons: [{
+        action: "ok",
+        label: game.i18n.localize("crucible-tailoring.flow.confirm"),
+        default: true,
+        callback: (event, button, dialog) => {
+          selections = [];
+          for (const m of materials) {
+            const input = dialog.element.querySelector(`input[name="qty-${m.id}"]`);
+            const qty = Math.clamp(Number(input?.value) || 0, 0, m.quantity);
+            if (qty > 0) selections.push({ material: m, quantity: qty });
+          }
+        }
+      }, {
+        action: "cancel",
+        label: game.i18n.localize("crucible-tailoring.flow.cancel")
+      }]
+    });
+
+    if (result !== "ok" || selections.length === 0) {
+      ui.notifications.warn(game.i18n.localize("crucible-tailoring.flow.noMaterialsSelected"));
+      return null;
+    }
+
+    const totalQuantity = selections.reduce((sum, s) => sum + s.quantity, 0);
+    if (totalQuantity < 1) {
+      ui.notifications.warn(game.i18n.localize("crucible-tailoring.flow.noMaterialsSelected"));
+      return null;
+    }
+
+    return {
+      materials: selections.map(s => s.material),
+      totalQuantity,
+      selections
+    };
   }
 
   /**

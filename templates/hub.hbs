@@ -60,10 +60,6 @@
       <p class="hub-empty">{{localize "crucible-tailoring.hub.noMaterials"}}</p>
       {{/if}}
     </div>
-    <div class="hub-import-zone" data-action="import-material">
-      <i class="fas fa-download"></i>
-      <span>{{localize "crucible-tailoring.hub.importPrompt"}}</span>
-    </div>
   </section>
 
   <section class="hub-section">
@@ -95,10 +91,6 @@
       <p class="hub-empty">{{localize "crucible-tailoring.hub.noRecipes"}}</p>
       {{/if}}
     </div>
-    <div class="hub-recipe-box" data-action="recipe-drop">
-      <i class="fas fa-box-open"></i>
-      <span>{{localize "crucible-tailoring.hub.recipeDropPrompt"}}</span>
-    </div>
   </section>
 
   <section class="hub-section">
@@ -121,6 +113,18 @@
       {{else}}
       <p class="hub-empty">{{localize "crucible-tailoring.hub.noTools"}}</p>
       {{/if}}
+    </div>
+  </section>
+
+  <section class="hub-section hub-import-section">
+    <h3>{{localize "crucible-tailoring.hub.importTitle"}}</h3>
+    <div class="hub-import-zone" data-action="import-material">
+      <i class="fas fa-download"></i>
+      <span>{{localize "crucible-tailoring.hub.importPrompt"}}</span>
+    </div>
+    <div class="hub-recipe-box" data-action="recipe-drop">
+      <i class="fas fa-box-open"></i>
+      <span>{{localize "crucible-tailoring.hub.recipeDropPrompt"}}</span>
     </div>
   </section>
 </div>

@@ -18,7 +18,7 @@
       "system": {
         "category": "treasure",
         "quality": "standard",
-        "price": 50,
+        "price": 12,
         "weight": 1,
         "quantity": 1,
         "properties": ["stackable"],

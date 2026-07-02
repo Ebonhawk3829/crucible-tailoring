@@ -102,7 +102,10 @@ export async function confirmProposal(message) {
       await item.system.consume(1, { save: true });
     } else {
       // Fallback for items without Crucible's consume (e.g. non-physical items)
-      const isStackable = item.system?.properties?.includes?.("stackable") ?? false;
+      const props = item.system?.properties;
+      const isStackable = (props instanceof Set)
+        ? props.has("stackable")
+        : Array.isArray(props) ? props.includes("stackable") : false;
       const quantity = Number(item.system?.quantity) || 1;
       if (isStackable && quantity > 1) {
         await item.update({ "system.quantity": quantity - 1 });

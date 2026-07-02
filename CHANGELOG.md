@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.4-dev] — Prerelease
+
+### Added
+- Craft Trade Goods now has a per-material batch quantity selector — pick how many units from each stack
+- Hub auto-refreshes when actor inventory changes (hooks on create/update/delete Item)
+
+### Changed
+- Material and recipe import drop zones moved to a dedicated Import & Registration section at the bottom of the hub
+- Merged DC labels — if two quality tiers share a DC, the dropdown shows concatenated label (e.g. "Shoddy / Standard Material")
+
+### Fixed
+- `Set.includes` → `Set.has` in chat.mjs fallback consume path — Crucible's properties field is a Set, not an Array
+- Trade Goods base price corrected from 50 to 12 copper (was showing 5 silver instead of 1 silver 2 copper)
+
 ## [0.3.3-dev] — Prerelease
 
 ### Added

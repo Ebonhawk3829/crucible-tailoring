@@ -25,13 +25,21 @@ export const ACTIVITY_DEFS = {
       if (!selectedMaterials?.length) return null;
       const materialQuality = selectedMaterials[0].system?.quality ?? "standard";
       const dc = getMaterialDC(materialQuality);
+      // Build per-material quantity map from batch selections
+      const materialQuantities = {};
+      if (extra.batchSelections) {
+        for (const s of extra.batchSelections) {
+          materialQuantities[s.material.uuid] = s.quantity;
+        }
+      }
       return {
         actorUuid: actor.uuid,
         activityId: "craftTradeGoods",
         materialQuality,
         dc,
         inputUuids: selectedMaterials.map(m => m.uuid),
-        batchCount: selectedMaterials.length
+        batchCount: extra.batchCount ?? selectedMaterials.length,
+        materialQuantities
       };
     },
 
@@ -46,7 +54,7 @@ export const ACTIVITY_DEFS = {
         system: {
           category: "treasure",
           quality: quality ?? "standard",
-          price: 50,
+          price: 12,
           weight: 1,
           quantity: payload.batchCount ?? 1,
           properties: ["stackable"],
